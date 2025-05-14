@@ -12,30 +12,38 @@
         }
     </style>
 </head>
-<body class="bg-gray-50">
-    <!-- Navigation -->
+<body class="bg-gray-50">    <!-- Navigation -->
     <nav class="bg-blue-800 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="index.php" class="text-xl font-bold">DICT Client Management System</a>
+                        <span class="text-xl font-bold">DICT Client Management System</span>
                     </div>
-                </div>
-                <div class="flex items-center">
-                    <a href="index.php" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Home</a>
-                    <a href="services_provided.php" class="px-3 py-2 rounded-md text-sm font-medium hover:bg-blue-700">Services</a>
-                    <a href="tech-support.php" class="px-3 py-2 rounded-md text-sm font-medium bg-blue-900">Tech Support</a>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">
+                        <a href="index.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Home</a>
+                        <a href="services_provided.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Services</a>
+                        <a href="training.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Training</a>
+                        <a href="tech-support.php" class="border-b-2 border-white px-1 pt-1 text-sm font-medium">Tech Support</a>
+                    </div>
                 </div>
             </div>
         </div>
     </nav>
 
     <!-- Page Header -->
-    <div class="bg-blue-700 text-white">
-        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
-            <h1 class="text-3xl font-bold">Technical Support</h1>
-            <p class="mt-2">Submit a technical support request or browse our knowledge base</p>
+    <div class="bg-white shadow">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center">
+                <a href="index.php" class="mr-2 text-blue-600 hover:text-blue-800">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
+                    </svg>
+                </a>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    Technical Support
+                </h1>
+            </div>
         </div>
     </div>
 

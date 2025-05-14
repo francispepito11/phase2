@@ -84,8 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         body {
             font-family: 'Inter', sans-serif;
-        }
-    </style>
+        }    </style>
 </head>
 <body class="bg-gray-50">
     <!-- Navigation -->
@@ -96,8 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="flex-shrink-0 flex items-center">
                         <span class="text-xl font-bold">DICT Client Management System</span>
                     </div>
-                    <div class="hidden md:ml-6 md:flex md:space-x-8">
-                        <a href="index.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Home</a>
+                    <div class="hidden md:ml-6 md:flex md:space-x-8">                        <a href="index.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Home</a>
+                        <a href="services_provided.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Services</a>
+                        <a href="training.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Training</a>
+                        <a href="tech_support.php" class="border-b-2 border-white px-1 pt-1 text-sm font-medium">Tech Support</a>
                     </div>
                 </div>
             </div>
@@ -110,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="flex items-center">
                 <a href="index.php" class="mr-2 text-blue-600 hover:text-blue-800">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M9.707 14.707a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 1.414L7.414 9H15a1 1 0 110 2H7.414l2.293 2.293a1 1 0 010 1.414z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
                     </svg>
                 </a>
                 <h1 class="text-2xl font-bold text-gray-900">
