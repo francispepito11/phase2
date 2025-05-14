@@ -19,7 +19,7 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <span class="text-xl font-bold">DICT Client Management System BRO BRO</span>
+                        <span class="text-xl font-bold">DICT Client Management System</span>
                     </div>
                 </div>
             </div>
@@ -31,7 +31,7 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 flex flex-col items-center">
             <div class="text-center">
                 <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                    DICT Client Services Portal BRO BRO
+                    DICT Client Services Portal
                 </h1>
                 <p class="mt-6 text-xl max-w-3xl">
                     Providing technical support and services to government agencies and the public.
