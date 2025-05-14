@@ -8,6 +8,9 @@ if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
     exit;
 }
 
+// TEMPORARY: Auto-login bypass code has been removed
+// Now the actual login form will work
+
 // Initialize variables
 $username = $password = "";
 $username_err = $password_err = $login_err = "";
