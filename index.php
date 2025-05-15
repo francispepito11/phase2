@@ -19,6 +19,7 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
+                        <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
                         <span class="text-xl font-bold">DICT Client Management System</span>
                     </div>
                 </div>
