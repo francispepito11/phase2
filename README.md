@@ -3,6 +3,8 @@
 ## Overview
 The DICT Client Management System is a web-based application designed for the Department of Information and Communications Technology to manage client service requests, technical support, and service tracking. This system allows DICT staff to efficiently record, track, and respond to various technical support and service requests from government agencies and the public.
 
+**Version:** 1.0.0 (Last Updated: May 2025)
+
 ## Features
 
 ### Public-facing Features
@@ -35,16 +37,18 @@ The system supports various technical services including:
 ### System Requirements
 - PHP 7.4 or higher
 - MySQL 5.7 or higher
-- Web server (Apache, Nginx)
-- Modern web browser
+- Web server (Apache/XAMPP recommended)
+- Modern web browser (Chrome, Firefox, Edge)
+- Minimum 2GB RAM, 10GB storage space
 
 ### Installation
 
-1. Clone the repository or extract files to your web server directory
+1. Clone the repository or extract files to your web server directory (e.g., `c:\xampp\htdocs\`)
 2. Create a MySQL database named `dict`
-3. Import the database schema (SQL file provided separately)
-4. Configure database connection in `includes/db_connect.php`
-5. Access the system through a web browser
+3. Import the database schema from `dict.sql` file included in the repository
+4. Configure database connection in `includes/db_connect.php` if needed
+5. Start your Apache and MySQL services (if using XAMPP, use the XAMPP Control Panel)
+6. Access the system through a web browser at `http://localhost/phase2-1/`
 
 ### Database Configuration
 The system uses a MySQL database with the following default configuration:
@@ -59,19 +63,27 @@ $dbname = "dict";
 - **admin/**: Administrative backend files
   - dashboard.php: Admin dashboard
   - login.php: Admin authentication
+  - logout.php: Admin logout functionality
 - **includes/**: Shared components
   - db_connect.php: Database connection
   - crud_operations.php: Database CRUD operations
 - **assets/**: Static assets
   - img/: Images including logos
+- **images/**: Additional image resources
+  - dict-logo.png: DICT logo
+- **uploads/**: Storage for uploaded files
+  - support/: Support-related uploads
+- **spike-nuxtjs-free-1.0.0/**: Frontend template resources (Nuxt.js)
 - **index.php**: Homepage
 - **services_list.php**: View list of services
 - **services_provided.php**: Record services provided
 - **services_request.php**: Client service request form
 - **tech_support.php**: Technical support request form
+- **training.php**: Training-related services
 - **view_service.php**: View service details
 - **edit_service.php**: Edit service details
 - **delete_service.php**: Delete service records
+- **dict.sql**: Database schema
 
 ## Usage
 
@@ -97,17 +109,31 @@ $dbname = "dict";
 - Database queries use prepared statements to prevent SQL injection
 
 ## Future Enhancements
-- Email notification system
-- Mobile application client
+- Email notification system for service request updates
+- Mobile application client for on-the-go access
 - Integration with other government information systems
-- Enhanced reporting and analytics
+- Enhanced reporting and analytics dashboard
 - Client self-service portal
+- Two-factor authentication for admin access
+- API development for third-party integrations
+- Load balancing for improved performance
+
+## Development Roadmap
+- **Q3 2025**: Email notification system implementation
+- **Q4 2025**: Enhanced reporting and analytics
+- **Q1 2026**: Client self-service portal development
+- **Q2 2026**: Mobile application release
+
+## Troubleshooting
+- **Database Connection Issues**: Verify credentials in `includes/db_connect.php`
+- **File Upload Errors**: Check folder permissions for the `uploads` directory
+- **Session Timeout**: Adjust timeout settings in PHP configuration
+- **Login Problems**: Reset password through database if necessary
 
 ## Support
-For technical support or inquiries, please contact the system administrator or DICT helpdesk.
+For technical support or inquiries, please contact:
+- System Administrator: admin@dict.gov.ph
+- DICT Helpdesk: helpdesk@dict.gov.ph or call (02) 8920-0101
 
 ## License
-© Department of Information and Communications Technology. All rights reserved.
-
-
-brobro
+© Department of Information and Communications Technology (2023-2025). All rights reserved.
