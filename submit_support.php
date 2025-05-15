@@ -7,15 +7,14 @@ require_once 'includes/crud_operations.php';
 $errors = [];
 
 // Process form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate and sanitize inputs
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {    // Validate and sanitize inputs
     $name = isset($_POST['name']) ? sanitize_input($_POST['name']) : '';
     $email = isset($_POST['email']) ? sanitize_input($_POST['email']) : '';
     $agency = isset($_POST['agency']) ? sanitize_input($_POST['agency']) : '';
     $region = isset($_POST['region']) ? sanitize_input($_POST['region']) : '';
-    $province = isset($_POST['province']) ? sanitize_input($_POST['province']) : '';
-    $district = isset($_POST['district']) ? sanitize_input($_POST['district']) : '';
-    $city_municipality = isset($_POST['city_municipality']) ? sanitize_input($_POST['city_municipality']) : '';
+    $province_id = isset($_POST['province_id']) ? sanitize_input($_POST['province_id']) : 0;
+    $district_id = isset($_POST['district_id']) ? sanitize_input($_POST['district_id']) : null;
+    $municipality_id = isset($_POST['municipality_id']) ? sanitize_input($_POST['municipality_id']) : 0;
     $support_type = isset($_POST['support_type']) ? sanitize_input($_POST['support_type']) : '';
     $subject = isset($_POST['subject']) ? sanitize_input($_POST['subject']) : '';
     $message = isset($_POST['message']) ? sanitize_input($_POST['message']) : '';
@@ -53,77 +52,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     
     // If no errors, proceed with saving the data
-    if (empty($errors)) {
-        // Get region ID from region code (simple approach)
-        $region_id = 0;
-        $region_query = "SELECT id FROM regions WHERE region_code = ?";
-        $stmt = $conn->prepare($region_query);
+    if (empty($errors)) {        // Get region ID from region code (simple approach)
+        $region_id = $region; // Region ID is now directly passed from the form
         
-        if ($stmt) {
-            $stmt->bind_param("s", $region);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            if ($result->num_rows > 0) {
-                $row = $result->fetch_assoc();
-                $region_id = $row['id'];
-            }
-            $stmt->close();
-        }
-        
-        // Default values for optional fields
-        $province_id = 0;
-        $district_id = null;
-        $municipality_id = 0;
-        
-        // Try to find province, district, and municipality IDs if provided
-        if (!empty($province)) {
-            $province_query = "SELECT id FROM provinces WHERE province_name LIKE ?";
-            $stmt = $conn->prepare($province_query);
-            if ($stmt) {
-                $province_param = "%$province%";
-                $stmt->bind_param("s", $province_param);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
-                    $province_id = $row['id'];
-                }
-                $stmt->close();
-            }
-        }
-        
-        if (!empty($district)) {
-            $district_query = "SELECT id FROM districts WHERE district_name LIKE ?";
-            $stmt = $conn->prepare($district_query);
-            if ($stmt) {
-                $district_param = "%$district%";
-                $stmt->bind_param("s", $district_param);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
-                    $district_id = $row['id'];
-                }
-                $stmt->close();
-            }
-        }
-        
-        if (!empty($city_municipality)) {
-            $municipality_query = "SELECT id FROM municipalities WHERE municipality_name LIKE ?";
-            $stmt = $conn->prepare($municipality_query);
-            if ($stmt) {
-                $municipality_param = "%$city_municipality%";
-                $stmt->bind_param("s", $municipality_param);
-                $stmt->execute();
-                $result = $stmt->get_result();
-                if ($result->num_rows > 0) {
-                    $row = $result->fetch_assoc();
-                    $municipality_id = $row['id'];
-                }
-                $stmt->close();
-            }
-        }
+        // Default values for optional fields are already set during validation
         
         // Prepare data for insertion
         $support_data = [

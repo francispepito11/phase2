@@ -12,6 +12,11 @@
         }
     </style>
 </head>
+<?php
+// Include database connection and location data
+require_once 'includes/db_connect.php';
+require_once 'includes/location_data.php';
+?>
 <body class="bg-gray-50">    <!-- Navigation -->
     <nav class="bg-blue-800 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -77,47 +82,38 @@
                                 <input type="text" id="agency" name="agency" required 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
-                            <div>
-                                <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                            <div>                                <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
                                 <select id="region" name="region" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Region</option>
-                                    <option value="NCR">National Capital Region (NCR)</option>
-                                    <option value="CAR">Cordillera Administrative Region (CAR)</option>
-                                    <option value="Region I">Region I (Ilocos Region)</option>
-                                    <option value="Region II">Region II (Cagayan Valley)</option>
-                                    <option value="Region III">Region III (Central Luzon)</option>
-                                    <option value="Region IV-A">Region IV-A (CALABARZON)</option>
-                                    <option value="Region IV-B">Region IV-B (MIMAROPA)</option>
-                                    <option value="Region V">Region V (Bicol Region)</option>
-                                    <option value="Region VI">Region VI (Western Visayas)</option>
-                                    <option value="Region VII">Region VII (Central Visayas)</option>
-                                    <option value="Region VIII">Region VIII (Eastern Visayas)</option>
-                                    <option value="Region IX">Region IX (Zamboanga Peninsula)</option>
-                                    <option value="Region X">Region X (Northern Mindanao)</option>
-                                    <option value="Region XI">Region XI (Davao Region)</option>
-                                    <option value="Region XII">Region XII (SOCCSKSARGEN)</option>
-                                    <option value="Region XIII">Region XIII (Caraga)</option>
-                                    <option value="BARMM">Bangsamoro Autonomous Region in Muslim Mindanao</option>
+                                    <!-- Regions will be loaded dynamically -->
                                 </select>
                             </div>
                         </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Province</label>
-                                <input type="text" id="province" name="province" 
+                                <select id="province" name="province_id" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select Province</option>
+                                    <!-- Provinces will be loaded dynamically -->
+                                </select>
                             </div>
                             <div>
                                 <label for="district" class="block text-sm font-medium text-gray-700 mb-1">District</label>
-                                <input type="text" id="district" name="district" 
+                                <select id="district" name="district_id" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select District</option>
+                                    <!-- Districts will be loaded dynamically -->
+                                </select>
                             </div>
                             <div>
                                 <label for="city_municipality" class="block text-sm font-medium text-gray-700 mb-1">City/Municipality</label>
-                                <input type="text" id="city_municipality" name="city_municipality" 
+                                <select id="city_municipality" name="municipality_id" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select City/Municipality</option>
+                                    <!-- Municipalities will be loaded dynamically -->
+                                </select>
                             </div>
                         </div>
                         
@@ -250,7 +246,206 @@
             <div class="text-center">
                 <p>&copy; <?php echo date('Y'); ?> Department of Information and Communications Technology. All rights reserved.</p>
             </div>
-        </div>
-    </footer>
+        </div>    </footer>    <!-- JavaScript for Dynamic Dropdowns -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get reference to the dropdown elements
+            const regionSelect = document.getElementById('region');
+            const provinceSelect = document.getElementById('province');
+            const districtSelect = document.getElementById('district');
+            const municipalitySelect = document.getElementById('city_municipality');
+            
+            // Load regions on page load
+            fetchRegions();
+            
+            // Event listener for region change
+            regionSelect.addEventListener('change', function() {
+                const regionId = this.value;
+                
+                // Clear dependent dropdowns
+                provinceSelect.innerHTML = '<option value="">Select Province</option>';
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+                municipalitySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+                
+                if (regionId) {
+                    fetchProvinces(regionId);
+                }
+            });
+            
+            // Event listener for province change
+            provinceSelect.addEventListener('change', function() {
+                const provinceId = this.value;
+                
+                // Clear dependent dropdowns
+                districtSelect.innerHTML = '<option value="">Select District</option>';
+                municipalitySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+                
+                if (provinceId) {
+                    fetchDistricts(provinceId);
+                    fetchMunicipalities(provinceId);
+                }
+            });
+            
+            // Event listener for district change
+            districtSelect.addEventListener('change', function() {
+                const districtId = this.value;
+                const provinceId = provinceSelect.value;
+                
+                // Clear municipality dropdown
+                municipalitySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+                
+                if (districtId && provinceId) {
+                    fetchMunicipalities(provinceId, districtId);
+                }
+            });
+            
+            // Function to fetch all regions
+            function fetchRegions() {
+                console.log('Fetching all regions');
+                fetch('includes/location_data.php?action=get_regions')
+                    .then(response => {
+                        console.log('Region response status:', response.status);
+                        return response.text(); // Use text() instead of json() for debugging
+                    })
+                    .then(text => {
+                        console.log('Raw region response:', text);
+                        // Convert text to JSON after logging
+                        let data;
+                        try {
+                            data = JSON.parse(text);
+                            console.log('Parsed region data:', data);
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                            return;
+                        }
+                        
+                        // Clear existing options except the first one
+                        regionSelect.innerHTML = '<option value="">Select Region</option>';
+                        
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.forEach(region => {
+                                const option = document.createElement('option');
+                                option.value = region.id;
+                                option.textContent = region.region_name;
+                                regionSelect.appendChild(option);
+                            });
+                            console.log('Added', data.length, 'regions to dropdown');
+                        } else {
+                            console.log('No regions found or data is not an array');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching regions:', error));
+            }
+              
+            // Function to fetch provinces by region
+            function fetchProvinces(regionId) {
+                console.log('Fetching provinces for region ID:', regionId);
+                fetch(`includes/location_data.php?action=get_provinces&region_id=${regionId}`)
+                    .then(response => {
+                        console.log('Province response status:', response.status);
+                        return response.text(); // Use text() instead of json() for debugging
+                    })
+                    .then(text => {
+                        console.log('Raw province response:', text);
+                        // Convert text to JSON after logging
+                        let data;
+                        try {
+                            data = JSON.parse(text);
+                            console.log('Parsed province data:', data);
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                            return;
+                        }
+                        
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.forEach(province => {
+                                const option = document.createElement('option');
+                                option.value = province.id;
+                                option.textContent = province.province_name;
+                                provinceSelect.appendChild(option);
+                            });
+                            console.log('Added', data.length, 'provinces to dropdown');
+                        } else {
+                            console.log('No provinces found or data is not an array');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching provinces:', error));
+            }
+              // Function to fetch districts by province
+            function fetchDistricts(provinceId) {
+                console.log('Fetching districts for province ID:', provinceId);
+                fetch(`includes/location_data.php?action=get_districts&province_id=${provinceId}`)
+                    .then(response => {
+                        console.log('District response status:', response.status);
+                        return response.text(); // Use text() instead of json() for debugging
+                    })
+                    .then(text => {
+                        console.log('Raw district response:', text);
+                        // Convert text to JSON after logging
+                        let data;
+                        try {
+                            data = JSON.parse(text);
+                            console.log('Parsed district data:', data);
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                            return;
+                        }
+                        
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.forEach(district => {
+                                const option = document.createElement('option');
+                                option.value = district.id;
+                                option.textContent = district.district_name;
+                                districtSelect.appendChild(option);
+                            });
+                            console.log('Added', data.length, 'districts to dropdown');
+                        } else {
+                            console.log('No districts found or data is not an array');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching districts:', error));
+            }
+            
+            // Function to fetch municipalities by province and district
+            function fetchMunicipalities(provinceId, districtId = null) {
+                console.log('Fetching municipalities for province ID:', provinceId, 'district ID:', districtId);
+                let url = `includes/location_data.php?action=get_municipalities&province_id=${provinceId}`;
+                if (districtId) {
+                    url += `&district_id=${districtId}`;
+                }
+                
+                fetch(url)
+                    .then(response => {
+                        console.log('Municipality response status:', response.status);
+                        return response.text(); // Use text() instead of json() for debugging
+                    })
+                    .then(text => {
+                        console.log('Raw municipality response:', text);
+                        // Convert text to JSON after logging
+                        let data;
+                        try {
+                            data = JSON.parse(text);
+                            console.log('Parsed municipality data:', data);
+                        } catch (e) {
+                            console.error('Error parsing JSON:', e);
+                            return;
+                        }
+                        
+                        if (Array.isArray(data) && data.length > 0) {
+                            data.forEach(municipality => {
+                                const option = document.createElement('option');
+                                option.value = municipality.id;
+                                option.textContent = municipality.municipality_name;
+                                municipalitySelect.appendChild(option);
+                            });
+                            console.log('Added', data.length, 'municipalities to dropdown');
+                        } else {
+                            console.log('No municipalities found or data is not an array');
+                        }
+                    })
+                    .catch(error => console.error('Error fetching municipalities:', error));
+            }
+        });
+    </script>
 </body>
 </html>
