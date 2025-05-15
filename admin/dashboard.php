@@ -8,73 +8,74 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
-// In a real application, you would fetch data from the database
-// For this example, we'll use sample data
-$serviceRequests = [
-    [
-        'id' => 1,
-        'client_name' => 'Cherry Belle L. Assali',
-        'agency' => 'IPHO Sulu',
-        'region' => 'BARMM',
-        'province' => 'Sulu',
-        'district' => 'District 1',
-        'municipality' => 'Jolo',
-        'service_type' => 'WiFi Installation/Configuration',
-        'description' => 'Provided technical assistance through the eGov-National ID',
-        'date_requested' => '2025-01-06',
-        'date_assisted' => '2025-01-06',
-        'date_resolved' => '2025-01-06',
-        'assisted_by' => 'Ryan Hammari',
-        'status' => 'Resolved',
-        'remarks' => 'Done'
-    ],
-    [
-        'id' => 2,
-        'client_name' => 'Juan Dela Cruz',
-        'agency' => 'DepEd Region IV-A',
-        'region' => 'Region IV-A',
-        'province' => 'Laguna',
-        'district' => 'District 2',
-        'municipality' => 'Calamba',
-        'service_type' => 'GovNet Installation/Maintenance',
-        'description' => 'Need assistance with GovNet installation for new office',
-        'date_requested' => '2025-05-10',
-        'date_assisted' => '2025-05-12',
-        'date_resolved' => '',
-        'assisted_by' => 'Maria Santos',
-        'status' => 'In Progress',
-        'remarks' => 'Scheduled for completion by May 20'
-    ],
-    [
-        'id' => 3,
-        'client_name' => 'Pedro Penduko',
-        'agency' => 'DILG Region X',
-        'region' => 'Region X',
-        'province' => 'Misamis Oriental',
-        'district' => 'District 1',
-        'municipality' => 'Cagayan de Oro',
-        'service_type' => 'PNPKI Tech Support',
-        'description' => 'Issues with digital signature verification',
-        'date_requested' => '2025-05-08',
-        'date_assisted' => '',
-        'date_resolved' => '',
-        'assisted_by' => '',
-        'status' => 'Pending',
-        'remarks' => 'Awaiting assignment'
-    ]
-];
+// Include database connection
+include_once '../includes/db_connect.php';
+
+// Fetch service requests from the database
+$serviceRequests = [];
+$query = "SELECT tsr.*, 
+          r.region_name, p.province_name, d.district_name, m.municipality_name
+          FROM tech_support_requests tsr
+          LEFT JOIN regions r ON tsr.region_id = r.id
+          LEFT JOIN provinces p ON tsr.province_id = p.id
+          LEFT JOIN districts d ON tsr.district_id = d.id
+          LEFT JOIN municipalities m ON tsr.municipality_id = m.id
+          ORDER BY tsr.date_requested DESC";
+
+$result = $conn->query($query);
+
+if ($result && $result->num_rows > 0) {
+    while ($row = $result->fetch_assoc()) {
+        $serviceRequests[] = [
+            'id' => $row['id'],
+            'client_name' => $row['client_name'],
+            'agency' => $row['agency'],
+            'region' => $row['region_name'] ?? 'Unknown',
+            'province' => $row['province_name'] ?? 'Unknown',
+            'district' => $row['district_name'] ?? 'Unknown',
+            'municipality' => $row['municipality_name'] ?? 'Unknown',
+            'service_type' => $row['support_type'],
+            'description' => $row['issue_description'],
+            'date_requested' => date('Y-m-d', strtotime($row['date_requested'])),
+            'date_assisted' => $row['date_assisted'] ? date('Y-m-d', strtotime($row['date_assisted'])) : '',
+            'date_resolved' => $row['date_resolved'] ? date('Y-m-d', strtotime($row['date_resolved'])) : '',
+            'assisted_by' => 'Staff', // This would ideally come from users table based on assisted_by_id
+            'status' => $row['status'],
+            'remarks' => $row['remarks']
+        ];
+    }
+}
 
 // Get statistics
 $totalRequests = count($serviceRequests);
-$pendingRequests = count(array_filter($serviceRequests, function($req) {
-    return $req['status'] === 'Pending';
-}));
-$inProgressRequests = count(array_filter($serviceRequests, function($req) {
-    return $req['status'] === 'In Progress';
-}));
-$resolvedRequests = count(array_filter($serviceRequests, function($req) {
-    return $req['status'] === 'Resolved';
-}));
+
+// Use SQL COUNT for more efficient statistics
+$statsQuery = "SELECT 
+    COUNT(*) as total,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved
+FROM tech_support_requests";
+
+$statsResult = $conn->query($statsQuery);
+if ($statsResult && $statsResult->num_rows > 0) {
+    $stats = $statsResult->fetch_assoc();
+    $totalRequests = $stats['total'];
+    $pendingRequests = $stats['pending'];
+    $inProgressRequests = $stats['in_progress'];
+    $resolvedRequests = $stats['resolved'];
+} else {
+    // Fallback to PHP counting if SQL query fails
+    $pendingRequests = count(array_filter($serviceRequests, function($req) {
+        return $req['status'] === 'Pending';
+    }));
+    $inProgressRequests = count(array_filter($serviceRequests, function($req) {
+        return $req['status'] === 'In Progress';
+    }));
+    $resolvedRequests = count(array_filter($serviceRequests, function($req) {
+        return $req['status'] === 'Resolved';
+    }));
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -292,7 +293,7 @@ $resolvedRequests = count(array_filter($serviceRequests, function($req) {
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                         <a href="view-request.php?id=<?php echo $request['id']; ?>" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                        <a href="edit-request.php?id=<?php echo $request['id']; ?>" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
+                                        <a href="edit_service.php?id=<?php echo $request['id']; ?>" class="text-indigo-600 hover:text-indigo-900">Edit</a>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>

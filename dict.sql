@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 15, 2025 at 05:49 AM
+-- Generation Time: May 15, 2025 at 09:33 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,86 +20,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `dict`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `clients`
---
-
-CREATE TABLE `clients` (
-  `id` int(11) NOT NULL,
-  `client_name` varchar(100) NOT NULL,
-  `contact_person` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `phone` varchar(20) NOT NULL,
-  `address` text DEFAULT NULL,
-  `company_name` varchar(100) DEFAULT NULL,
-  `status` enum('Active','Inactive','Prospect') NOT NULL DEFAULT 'Active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `clients`
---
-
-INSERT INTO `clients` (`id`, `client_name`, `contact_person`, `email`, `phone`, `address`, `company_name`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Acme Corporation', 'John Smith', 'john@acme.com', '(555) 123-4567', '123 Main St, Anytown, USA', 'Acme Corporation', 'Active', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(2, 'TechStart Inc.', 'Jane Doe', 'jane@techstart.com', '(555) 987-6543', '456 Tech Blvd, Innovation City, USA', 'TechStart Inc.', 'Active', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(3, 'Global Solutions', 'Robert Johnson', 'robert@globalsolutions.com', '(555) 456-7890', '789 Global Ave, Worldtown, USA', 'Global Solutions', 'Prospect', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(4, 'Innovative Systems', 'Sarah Williams', 'sarah@innovative.com', '(555) 234-5678', '321 Innovation Dr, Techville, USA', 'Innovative Systems', 'Inactive', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(5, 'Future Technologies', 'Michael Brown', 'michael@futuretech.com', '(555) 876-5432', '654 Future St, Tomorrow City, USA', 'Future Technologies', 'Active', '2025-05-14 07:36:56', '2025-05-14 07:36:56');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `client_notes`
---
-
-CREATE TABLE `client_notes` (
-  `id` int(11) NOT NULL,
-  `client_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `note_text` text NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `client_notes`
---
-
-INSERT INTO `client_notes` (`id`, `client_id`, `user_id`, `note_text`, `created_at`) VALUES
-(1, 1, 1, 'Initial meeting went well. Client is interested in our premium package.', '2023-06-10 06:30:00'),
-(2, 1, 1, 'Follow-up call scheduled for next week.', '2023-06-12 02:15:00'),
-(3, 2, 1, 'Client requested a demo of our new features.', '2023-06-11 01:45:00'),
-(4, 3, 1, 'Sent proposal for review.', '2023-06-13 08:20:00'),
-(5, 4, 1, 'Client is currently using a competitor product. Need to highlight our advantages.', '2023-06-09 03:30:00');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `client_training_sessions`
---
-
-CREATE TABLE `client_training_sessions` (
-  `id` int(11) NOT NULL,
-  `client_id` int(11) NOT NULL,
-  `session_id` int(11) NOT NULL,
-  `attendance_status` enum('Confirmed','Attended','No-Show','Cancelled') DEFAULT 'Confirmed'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `client_training_sessions`
---
-
-INSERT INTO `client_training_sessions` (`id`, `client_id`, `session_id`, `attendance_status`) VALUES
-(1, 1, 1, 'Confirmed'),
-(2, 2, 1, 'Confirmed'),
-(3, 1, 2, 'Confirmed'),
-(4, 3, 3, 'Confirmed'),
-(5, 2, 4, 'Attended'),
-(6, 4, 5, 'Cancelled');
 
 -- --------------------------------------------------------
 
@@ -333,8 +253,9 @@ CREATE TABLE `tech_support_requests` (
 --
 
 INSERT INTO `tech_support_requests` (`id`, `client_name`, `agency`, `email`, `phone`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
-(1, 'Mohammad Rasheed M. Heding', 'IPHO Jolo', 'rasheed121099@gmail.com', '09918195487', 0, 0, 2, 0, 'WiFi Connectivity Issues', '1', '2025-05-15 02:04:29', NULL, NULL, NULL, 'Pending', NULL, '2025-05-15 02:04:29', '2025-05-15 02:04:29'),
-(2, 'Nidz Tuttuh', 'ILCD IX', 'nidzttuh@gmail.com', '09918295483', 12, 12, 1, 15, 'Other Technical Assistance', 'undertime need OT', '2025-05-15 02:29:14', NULL, NULL, NULL, 'Pending', NULL, '2025-05-15 02:29:14', '2025-05-15 02:29:14');
+(1, 'Mohammad Rasheed M. Heding', 'IPHO Jolo', 'rasheed121099@gmail.com', '09918195487', 0, 0, 2, 0, 'WiFi Connectivity Issues', '1', '2025-05-15 02:04:29', '2025-05-15 00:31:40', '2025-05-15 01:29:02', NULL, 'Resolved', 'Fix applied to the client', '2025-05-15 02:04:29', '2025-05-15 07:29:02'),
+(2, 'Nidz Tuttuh', 'ILCD IX', 'nidzttuh@gmail.com', '09918295483', 12, 12, 1, 15, 'Other Technical Assistance', 'undertime need OT', '2025-05-15 02:29:14', '2025-05-15 01:24:42', NULL, NULL, 'In Progress', NULL, '2025-05-15 02:29:14', '2025-05-15 07:24:42'),
+(3, 'Juan Dela Cruz', 'DEPED', 'juancruz@gmail.com', '09918295483', 12, 12, 1, 15, 'GovNet Technical Support', 'Net', '2025-05-15 06:26:48', '2025-05-15 01:24:56', NULL, NULL, 'In Progress', NULL, '2025-05-15 06:26:48', '2025-05-15 07:24:56');
 
 -- --------------------------------------------------------
 
@@ -435,28 +356,6 @@ INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `created_at`
 --
 
 --
--- Indexes for table `clients`
---
-ALTER TABLE `clients`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `client_notes`
---
-ALTER TABLE `client_notes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `client_id` (`client_id`),
-  ADD KEY `user_id` (`user_id`);
-
---
--- Indexes for table `client_training_sessions`
---
-ALTER TABLE `client_training_sessions`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `client_id` (`client_id`,`session_id`),
-  ADD KEY `session_id` (`session_id`);
-
---
 -- Indexes for table `districts`
 --
 ALTER TABLE `districts`
@@ -551,24 +450,6 @@ ALTER TABLE `users`
 --
 
 --
--- AUTO_INCREMENT for table `clients`
---
-ALTER TABLE `clients`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `client_notes`
---
-ALTER TABLE `client_notes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `client_training_sessions`
---
-ALTER TABLE `client_training_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
-
---
 -- AUTO_INCREMENT for table `districts`
 --
 ALTER TABLE `districts`
@@ -608,7 +489,7 @@ ALTER TABLE `service_types`
 -- AUTO_INCREMENT for table `tech_support_requests`
 --
 ALTER TABLE `tech_support_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `training_events`
@@ -631,20 +512,6 @@ ALTER TABLE `users`
 --
 -- Constraints for dumped tables
 --
-
---
--- Constraints for table `client_notes`
---
-ALTER TABLE `client_notes`
-  ADD CONSTRAINT `client_notes_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `client_notes_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`);
-
---
--- Constraints for table `client_training_sessions`
---
-ALTER TABLE `client_training_sessions`
-  ADD CONSTRAINT `client_training_sessions_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `client_training_sessions_ibfk_2` FOREIGN KEY (`session_id`) REFERENCES `training_sessions` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `training_sessions`

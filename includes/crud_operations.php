@@ -185,6 +185,11 @@ function update_record($table, $id, $data) {
         
         $sql = "UPDATE $table SET $set_str WHERE id = ?";
         
+        // Log the SQL query for debugging
+        error_log("SQL Query: " . $sql);
+        error_log("Data to update: " . print_r($data, true));
+        error_log("ID to update: " . $id);
+        
         // Prepare the statement
         $stmt = $conn->prepare($sql);
         
@@ -197,11 +202,19 @@ function update_record($table, $id, $data) {
         $values = array_values($data);
         $values[] = $id;
         
+        // Log the bind parameters for debugging
+        error_log("Types string: " . $types);
+        error_log("Values to bind: " . print_r($values, true));
+        
         $stmt->bind_param($types, ...$values);
         
         // Execute the statement
-        if ($stmt->execute()) {
+        $execute_result = $stmt->execute();
+        error_log("Execute result: " . ($execute_result ? 'Success' : 'Failed'));
+        
+        if ($execute_result) {
             $affected_rows = $stmt->affected_rows;
+            error_log("Affected rows: " . $affected_rows);
             $stmt->close();
             return $affected_rows > 0;
         } else {
