@@ -41,13 +41,13 @@
             
             <div class="mt-12 grid grid-cols-1 md:grid-cols-4 gap-8 w-full max-w-5xl">
                 <!-- Services Provided Button -->
-                <a href="services_provided.php" class="bg-white text-blue-700 hover:bg-gray-100 rounded-lg shadow-lg overflow-hidden flex flex-col items-center text-center p-8 transition-all duration-200 transform hover:scale-105">
+                <!-- <a href="services_provided.php" class="bg-white text-blue-700 hover:bg-gray-100 rounded-lg shadow-lg overflow-hidden flex flex-col items-center text-center p-8 transition-all duration-200 transform hover:scale-105">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
                     <h2 class="text-xl font-bold">Services Provided</h2>
                     <p class="mt-2 text-sm text-gray-600">Request and track services provided by DICT</p>
-                </a>
+                </a> -->
                 
                 <!-- Tech Support Button -->
                 <a href="tech-support.php" class="bg-white text-blue-700 hover:bg-gray-100 rounded-lg shadow-lg overflow-hidden flex flex-col items-center text-center p-8 transition-all duration-200 transform hover:scale-105">

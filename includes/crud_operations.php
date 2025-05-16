@@ -13,11 +13,39 @@ function create_record($table, $data) {
     global $conn;
     
     try {
-        // Build the SQL query
-        $columns = implode(', ', array_keys($data));
-        $placeholders = implode(', ', array_fill(0, count($data), '?'));
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
         
-        $sql = "INSERT INTO $table ($columns) VALUES ($placeholders)";
+        // Get table columns to ensure we only insert valid columns
+        $columns_query = $conn->query("SHOW COLUMNS FROM `$table`");
+        $valid_columns = [];
+        while ($column = $columns_query->fetch_assoc()) {
+            $valid_columns[] = $column['Field'];
+        }
+        
+        // Filter data to only include valid columns
+        $filtered_data = [];
+        foreach ($data as $column => $value) {
+            if (in_array($column, $valid_columns)) {
+                $filtered_data[$column] = $value;
+            }
+        }
+        
+        if (empty($filtered_data)) {
+            throw new Exception("No valid columns to insert");
+        }
+        
+        // Build the SQL query
+        $columns = implode(', ', array_map(function($col) {
+            return "`$col`";
+        }, array_keys($filtered_data)));
+        
+        $placeholders = implode(', ', array_fill(0, count($filtered_data), '?'));
+        
+        $sql = "INSERT INTO `$table` ($columns) VALUES ($placeholders)";
         
         // Prepare and execute the statement
         $stmt = $conn->prepare($sql);
@@ -27,10 +55,34 @@ function create_record($table, $data) {
         }
         
         // Bind parameters
-        $types = str_repeat('s', count($data)); // Assuming all strings for simplicity
-        $values = array_values($data);
+        $types = '';
+        $values = [];
         
-        $stmt->bind_param($types, ...$values);
+        foreach ($filtered_data as $value) {
+            if (is_null($value)) {
+                $types .= 's'; // Treat NULL as string for binding
+                $values[] = null;
+            } elseif (is_int($value)) {
+                $types .= 'i';
+                $values[] = $value;
+            } elseif (is_double($value)) {
+                $types .= 'd';
+                $values[] = $value;
+            } else {
+                $types .= 's';
+                $values[] = $value;
+            }
+        }
+        
+        // Use reflection to bind parameters with null values
+        $bind_names[] = $types;
+        for ($i = 0; $i < count($values); $i++) {
+            $bind_name = 'bind' . $i;
+            $$bind_name = $values[$i];
+            $bind_names[] = &$$bind_name;
+        }
+        
+        call_user_func_array(array($stmt, 'bind_param'), $bind_names);
         
         // Execute the statement
         if ($stmt->execute()) {
@@ -61,17 +113,43 @@ function read_records($table, $columns = ['*'], $where = [], $order_by = '', $li
     global $conn;
     
     try {
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
+        
         // Build the SQL query
         $columns_str = implode(', ', $columns);
-        $sql = "SELECT $columns_str FROM $table";
+        $sql = "SELECT $columns_str FROM `$table`";
         
         // Add WHERE clause if conditions are provided
+        $bind_types = '';
+        $bind_values = [];
+        
         if (!empty($where)) {
             $conditions = [];
             foreach ($where as $column => $value) {
-                $conditions[] = "$column = ?";
+                if (is_null($value)) {
+                    $conditions[] = "`$column` IS NULL";
+                } else {
+                    $conditions[] = "`$column` = ?";
+                    
+                    if (is_int($value)) {
+                        $bind_types .= 'i';
+                    } elseif (is_double($value)) {
+                        $bind_types .= 'd';
+                    } else {
+                        $bind_types .= 's';
+                    }
+                    
+                    $bind_values[] = $value;
+                }
             }
-            $sql .= " WHERE " . implode(' AND ', $conditions);
+            
+            if (!empty($conditions)) {
+                $sql .= " WHERE " . implode(' AND ', $conditions);
+            }
         }
         
         // Add ORDER BY clause if provided
@@ -95,11 +173,13 @@ function read_records($table, $columns = ['*'], $where = [], $order_by = '', $li
         }
         
         // Bind parameters for WHERE clause
-        if (!empty($where)) {
-            $types = str_repeat('s', count($where)); // Assuming all strings for simplicity
-            $values = array_values($where);
+        if (!empty($bind_values)) {
+            $bind_params = array($bind_types);
+            foreach ($bind_values as &$value) {
+                $bind_params[] = &$value;
+            }
             
-            $stmt->bind_param($types, ...$values);
+            call_user_func_array(array($stmt, 'bind_param'), $bind_params);
         }
         
         // Execute the statement
@@ -134,9 +214,15 @@ function get_record_by_id($table, $id, $columns = ['*']) {
     global $conn;
     
     try {
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
+        
         // Build the SQL query
         $columns_str = implode(', ', $columns);
-        $sql = "SELECT $columns_str FROM $table WHERE id = ?";
+        $sql = "SELECT $columns_str FROM `$table` WHERE id = ?";
         
         // Prepare the statement
         $stmt = $conn->prepare($sql);
@@ -176,19 +262,43 @@ function update_record($table, $id, $data) {
     global $conn;
     
     try {
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
+        
+        // Get table columns to ensure we only update valid columns
+        $columns_query = $conn->query("SHOW COLUMNS FROM `$table`");
+        $valid_columns = [];
+        while ($column = $columns_query->fetch_assoc()) {
+            $valid_columns[] = $column['Field'];
+        }
+        
+        // Filter data to only include valid columns
+        $filtered_data = [];
+        foreach ($data as $column => $value) {
+            if (in_array($column, $valid_columns)) {
+                $filtered_data[$column] = $value;
+            }
+        }
+        
+        if (empty($filtered_data)) {
+            throw new Exception("No valid columns to update");
+        }
+        
         // Build the SQL query
         $set_clause = [];
-        foreach ($data as $column => $value) {
-            $set_clause[] = "$column = ?";
+        foreach ($filtered_data as $column => $value) {
+            if (is_null($value)) {
+                $set_clause[] = "`$column` = NULL";
+            } else {
+                $set_clause[] = "`$column` = ?";
+            }
         }
+        
         $set_str = implode(', ', $set_clause);
-        
-        $sql = "UPDATE $table SET $set_str WHERE id = ?";
-        
-        // Log the SQL query for debugging
-        error_log("SQL Query: " . $sql);
-        error_log("Data to update: " . print_r($data, true));
-        error_log("ID to update: " . $id);
+        $sql = "UPDATE `$table` SET $set_str WHERE id = ?";
         
         // Prepare the statement
         $stmt = $conn->prepare($sql);
@@ -198,25 +308,43 @@ function update_record($table, $id, $data) {
         }
         
         // Bind parameters
-        $types = str_repeat('s', count($data)) . 'i'; // Assuming all strings for data + integer for ID
-        $values = array_values($data);
+        $types = '';
+        $values = [];
+        
+        foreach ($filtered_data as $value) {
+            if (is_null($value)) {
+                continue; // Skip NULL values as they're handled in the query
+            } elseif (is_int($value)) {
+                $types .= 'i';
+                $values[] = $value;
+            } elseif (is_double($value)) {
+                $types .= 'd';
+                $values[] = $value;
+            } else {
+                $types .= 's';
+                $values[] = $value;
+            }
+        }
+        
+        // Add ID parameter
+        $types .= 'i';
         $values[] = $id;
         
-        // Log the bind parameters for debugging
-        error_log("Types string: " . $types);
-        error_log("Values to bind: " . print_r($values, true));
+        // Use reflection to bind parameters
+        $bind_names[] = $types;
+        for ($i = 0; $i < count($values); $i++) {
+            $bind_name = 'bind' . $i;
+            $$bind_name = $values[$i];
+            $bind_names[] = &$$bind_name;
+        }
         
-        $stmt->bind_param($types, ...$values);
+        call_user_func_array(array($stmt, 'bind_param'), $bind_names);
         
         // Execute the statement
-        $execute_result = $stmt->execute();
-        error_log("Execute result: " . ($execute_result ? 'Success' : 'Failed'));
-        
-        if ($execute_result) {
+        if ($stmt->execute()) {
             $affected_rows = $stmt->affected_rows;
-            error_log("Affected rows: " . $affected_rows);
             $stmt->close();
-            return $affected_rows > 0;
+            return $affected_rows >= 0; // Return true even if no rows were affected (no changes)
         } else {
             throw new Exception("Error executing statement: " . $stmt->error);
         }
@@ -237,8 +365,14 @@ function delete_record($table, $id) {
     global $conn;
     
     try {
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
+        
         // Build the SQL query
-        $sql = "DELETE FROM $table WHERE id = ?";
+        $sql = "DELETE FROM `$table` WHERE id = ?";
         
         // Prepare the statement
         $stmt = $conn->prepare($sql);
@@ -275,16 +409,42 @@ function count_records($table, $where = []) {
     global $conn;
     
     try {
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
+        
         // Build the SQL query
-        $sql = "SELECT COUNT(*) as count FROM $table";
+        $sql = "SELECT COUNT(*) as count FROM `$table`";
         
         // Add WHERE clause if conditions are provided
+        $bind_types = '';
+        $bind_values = [];
+        
         if (!empty($where)) {
             $conditions = [];
             foreach ($where as $column => $value) {
-                $conditions[] = "$column = ?";
+                if (is_null($value)) {
+                    $conditions[] = "`$column` IS NULL";
+                } else {
+                    $conditions[] = "`$column` = ?";
+                    
+                    if (is_int($value)) {
+                        $bind_types .= 'i';
+                    } elseif (is_double($value)) {
+                        $bind_types .= 'd';
+                    } else {
+                        $bind_types .= 's';
+                    }
+                    
+                    $bind_values[] = $value;
+                }
             }
-            $sql .= " WHERE " . implode(' AND ', $conditions);
+            
+            if (!empty($conditions)) {
+                $sql .= " WHERE " . implode(' AND ', $conditions);
+            }
         }
         
         // Prepare the statement
@@ -295,11 +455,13 @@ function count_records($table, $where = []) {
         }
         
         // Bind parameters for WHERE clause
-        if (!empty($where)) {
-            $types = str_repeat('s', count($where)); // Assuming all strings for simplicity
-            $values = array_values($where);
+        if (!empty($bind_values)) {
+            $bind_params = array($bind_types);
+            foreach ($bind_values as &$value) {
+                $bind_params[] = &$value;
+            }
             
-            $stmt->bind_param($types, ...$values);
+            call_user_func_array(array($stmt, 'bind_param'), $bind_params);
         }
         
         // Execute the statement
@@ -334,15 +496,21 @@ function search_records($table, $search_columns, $search_term, $columns = ['*'],
     global $conn;
     
     try {
+        // Check if table exists
+        $table_check = $conn->query("SHOW TABLES LIKE '$table'");
+        if ($table_check->num_rows == 0) {
+            throw new Exception("Table '$table' does not exist");
+        }
+        
         // Build the SQL query
         $columns_str = implode(', ', $columns);
-        $sql = "SELECT $columns_str FROM $table";
+        $sql = "SELECT $columns_str FROM `$table`";
         
         // Add WHERE clause for search
         if (!empty($search_columns) && !empty($search_term)) {
             $search_conditions = [];
             foreach ($search_columns as $column) {
-                $search_conditions[] = "$column LIKE ?";
+                $search_conditions[] = "`$column` LIKE ?";
             }
             $sql .= " WHERE " . implode(' OR ', $search_conditions);
         }
@@ -372,7 +540,12 @@ function search_records($table, $search_columns, $search_term, $columns = ['*'],
             $types = str_repeat('s', count($search_columns)); // Assuming all strings for simplicity
             $search_values = array_fill(0, count($search_columns), "%$search_term%");
             
-            $stmt->bind_param($types, ...$search_values);
+            $bind_params = array($types);
+            foreach ($search_values as &$value) {
+                $bind_params[] = &$value;
+            }
+            
+            call_user_func_array(array($stmt, 'bind_param'), $bind_params);
         }
         
         // Execute the statement

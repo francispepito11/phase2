@@ -1,3 +1,21 @@
+<?php
+// Start session to access error messages
+session_start();
+
+// Include database connection and location data
+require_once 'includes/db_connect.php';
+require_once 'includes/location_data.php';
+
+// Get any error messages from session
+$errors = isset($_SESSION['form_errors']) ? $_SESSION['form_errors'] : [];
+$form_data = isset($_SESSION['form_data']) ? $_SESSION['form_data'] : [];
+$success_message = isset($_SESSION['success_message']) ? $_SESSION['success_message'] : '';
+
+// Clear session variables
+unset($_SESSION['form_errors']);
+unset($_SESSION['form_data']);
+unset($_SESSION['success_message']);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -12,12 +30,8 @@
         }
     </style>
 </head>
-<?php
-// Include database connection and location data
-require_once 'includes/db_connect.php';
-require_once 'includes/location_data.php';
-?>
-<body class="bg-gray-50">    <!-- Navigation -->
+<body class="bg-gray-50">
+    <!-- Navigation -->
     <nav class="bg-blue-800 text-white shadow-lg">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -54,24 +68,47 @@ require_once 'includes/location_data.php';
 
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <?php if (!empty($errors)): ?>
+        <div class="mb-6 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md" role="alert">
+            <p class="font-bold">There were errors with your submission:</p>
+            <ul class="mt-2 list-disc list-inside">
+                <?php foreach ($errors as $error): ?>
+                <li><?php echo $error; ?></li>
+                <?php endforeach; ?>
+            </ul>
+        </div>
+        <?php endif; ?>
+        
+        <?php if (isset($_GET['status']) && $_GET['status'] === 'success' || !empty($success_message)): ?>
+        <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md" role="alert">
+            <p class="font-bold">Success!</p>
+            <p><?php echo !empty($success_message) ? $success_message : 'Your support request has been submitted successfully. Our team will contact you soon.'; ?></p>
+        </div>
+        <?php endif; ?>
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
             <!-- Left: Submit Support Request Form -->
-            <div class="md:col-span-2">                <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="md:col-span-2">
+                <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Submit a Support Request</h2>
-                    <form action="submit_support.php" method="post" enctype="multipart/form-data"><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <form action="submit_support.php" method="post" enctype="multipart/form-data">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
                                 <input type="text" id="name" name="name" required 
+                                    value="<?php echo isset($form_data['name']) ? htmlspecialchars($form_data['name']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                                 <input type="email" id="email" name="email" required 
+                                    value="<?php echo isset($form_data['email']) ? htmlspecialchars($form_data['email']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
                                 <label for="phone" class="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                                 <input type="tel" id="phone" name="phone" required 
+                                    value="<?php echo isset($form_data['phone']) ? htmlspecialchars($form_data['phone']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
                         </div>
@@ -80,9 +117,11 @@ require_once 'includes/location_data.php';
                             <div>
                                 <label for="agency" class="block text-sm font-medium text-gray-700 mb-1">Agency/Organization</label>
                                 <input type="text" id="agency" name="agency" required 
+                                    value="<?php echo isset($form_data['agency']) ? htmlspecialchars($form_data['agency']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
-                            <div>                                <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                            <div>
+                                <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
                                 <select id="region" name="region" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Region</option>
@@ -90,7 +129,8 @@ require_once 'includes/location_data.php';
                                 </select>
                             </div>
                         </div>
-                          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Province</label>
                                 <select id="province" name="province_id" 
@@ -122,26 +162,27 @@ require_once 'includes/location_data.php';
                             <select id="support_type" name="support_type" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select Support Type</option>
-                                <option value="PNPKI Technical Support">PNPKI Technical Support</option>
-                                <option value="iGovPhil Support">iGovPhil Support</option>
-                                <option value="GovNet Technical Support">GovNet Technical Support</option>
-                                <option value="WiFi Connectivity Issues">WiFi Connectivity Issues</option>
-                                <option value="National Broadband Plan">National Broadband Plan Support</option>
-                                <option value="DICT eGov Services">DICT eGov Services</option>
-                                <option value="Other Technical Assistance">Other Technical Assistance</option>
+                                <option value="PNPKI Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'PNPKI Technical Support') ? 'selected' : ''; ?>>PNPKI Technical Support</option>
+                                <option value="iGovPhil Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'iGovPhil Support') ? 'selected' : ''; ?>>iGovPhil Support</option>
+                                <option value="GovNet Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'GovNet Technical Support') ? 'selected' : ''; ?>>GovNet Technical Support</option>
+                                <option value="WiFi Connectivity Issues" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'WiFi Connectivity Issues') ? 'selected' : ''; ?>>WiFi Connectivity Issues</option>
+                                <option value="National Broadband Plan" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'National Broadband Plan') ? 'selected' : ''; ?>>National Broadband Plan Support</option>
+                                <option value="DICT eGov Services" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'DICT eGov Services') ? 'selected' : ''; ?>>DICT eGov Services</option>
+                                <option value="Other Technical Assistance" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Other Technical Assistance') ? 'selected' : ''; ?>>Other Technical Assistance</option>
                             </select>
                         </div>
                         
                         <div class="mb-4">
                             <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                             <input type="text" id="subject" name="subject" required 
+                                value="<?php echo isset($form_data['subject']) ? htmlspecialchars($form_data['subject']) : ''; ?>"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                         </div>
                         
                         <div class="mb-4">
                             <label for="message" class="block text-sm font-medium text-gray-700 mb-1">Description of Issue</label>
                             <textarea id="message" name="message" rows="5" required 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><?php echo isset($form_data['message']) ? htmlspecialchars($form_data['message']) : ''; ?></textarea>
                         </div>
                         
                         <div class="mb-4">
@@ -246,7 +287,10 @@ require_once 'includes/location_data.php';
             <div class="text-center">
                 <p>&copy; <?php echo date('Y'); ?> Department of Information and Communications Technology. All rights reserved.</p>
             </div>
-        </div>    </footer>    <!-- JavaScript for Dynamic Dropdowns -->
+        </div>
+    </footer>
+
+    <!-- JavaScript for Dynamic Dropdowns -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Get reference to the dropdown elements
@@ -301,114 +345,118 @@ require_once 'includes/location_data.php';
             
             // Function to fetch all regions
             function fetchRegions() {
-                console.log('Fetching all regions');
                 fetch('includes/location_data.php?action=get_regions')
                     .then(response => {
-                        console.log('Region response status:', response.status);
-                        return response.text(); // Use text() instead of json() for debugging
-                    })
-                    .then(text => {
-                        console.log('Raw region response:', text);
-                        // Convert text to JSON after logging
-                        let data;
-                        try {
-                            data = JSON.parse(text);
-                            console.log('Parsed region data:', data);
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e);
-                            return;
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
                         }
-                        
-                        // Clear existing options except the first one
-                        regionSelect.innerHTML = '<option value="">Select Region</option>';
-                        
+                        return response.json();
+                    })
+                    .then(data => {
                         if (Array.isArray(data) && data.length > 0) {
                             data.forEach(region => {
                                 const option = document.createElement('option');
                                 option.value = region.id;
                                 option.textContent = region.region_name;
+                                
+                                // Set selected if matches form data
+                                if ('<?php echo isset($form_data['region']) ? $form_data['region'] : ''; ?>' === region.id) {
+                                    option.selected = true;
+                                }
+                                
                                 regionSelect.appendChild(option);
                             });
-                            console.log('Added', data.length, 'regions to dropdown');
-                        } else {
-                            console.log('No regions found or data is not an array');
+                            
+                            // If region is selected, load provinces
+                            if (regionSelect.value) {
+                                fetchProvinces(regionSelect.value);
+                            }
                         }
                     })
-                    .catch(error => console.error('Error fetching regions:', error));
+                    .catch(error => {
+                        console.error('Error fetching regions:', error);
+                        // Add user-friendly error message
+                        regionSelect.innerHTML = '<option value="">Error loading regions</option>';
+                    });
             }
-              
+            
             // Function to fetch provinces by region
             function fetchProvinces(regionId) {
-                console.log('Fetching provinces for region ID:', regionId);
                 fetch(`includes/location_data.php?action=get_provinces&region_id=${regionId}`)
                     .then(response => {
-                        console.log('Province response status:', response.status);
-                        return response.text(); // Use text() instead of json() for debugging
-                    })
-                    .then(text => {
-                        console.log('Raw province response:', text);
-                        // Convert text to JSON after logging
-                        let data;
-                        try {
-                            data = JSON.parse(text);
-                            console.log('Parsed province data:', data);
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e);
-                            return;
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
                         }
-                        
+                        return response.json();
+                    })
+                    .then(data => {
                         if (Array.isArray(data) && data.length > 0) {
                             data.forEach(province => {
                                 const option = document.createElement('option');
                                 option.value = province.id;
                                 option.textContent = province.province_name;
+                                
+                                // Set selected if matches form data
+                                if ('<?php echo isset($form_data['province_id']) ? $form_data['province_id'] : ''; ?>' === province.id) {
+                                    option.selected = true;
+                                }
+                                
                                 provinceSelect.appendChild(option);
                             });
-                            console.log('Added', data.length, 'provinces to dropdown');
-                        } else {
-                            console.log('No provinces found or data is not an array');
+                            
+                            // If province is selected, load districts and municipalities
+                            if (provinceSelect.value) {
+                                fetchDistricts(provinceSelect.value);
+                                fetchMunicipalities(provinceSelect.value);
+                            }
                         }
                     })
-                    .catch(error => console.error('Error fetching provinces:', error));
+                    .catch(error => {
+                        console.error('Error fetching provinces:', error);
+                        // Add user-friendly error message
+                        provinceSelect.innerHTML = '<option value="">Error loading provinces</option>';
+                    });
             }
-              // Function to fetch districts by province
+            
+            // Function to fetch districts by province
             function fetchDistricts(provinceId) {
-                console.log('Fetching districts for province ID:', provinceId);
                 fetch(`includes/location_data.php?action=get_districts&province_id=${provinceId}`)
                     .then(response => {
-                        console.log('District response status:', response.status);
-                        return response.text(); // Use text() instead of json() for debugging
-                    })
-                    .then(text => {
-                        console.log('Raw district response:', text);
-                        // Convert text to JSON after logging
-                        let data;
-                        try {
-                            data = JSON.parse(text);
-                            console.log('Parsed district data:', data);
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e);
-                            return;
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
                         }
-                        
+                        return response.json();
+                    })
+                    .then(data => {
                         if (Array.isArray(data) && data.length > 0) {
                             data.forEach(district => {
                                 const option = document.createElement('option');
                                 option.value = district.id;
                                 option.textContent = district.district_name;
+                                
+                                // Set selected if matches form data
+                                if ('<?php echo isset($form_data['district_id']) ? $form_data['district_id'] : ''; ?>' === district.id) {
+                                    option.selected = true;
+                                }
+                                
                                 districtSelect.appendChild(option);
                             });
-                            console.log('Added', data.length, 'districts to dropdown');
-                        } else {
-                            console.log('No districts found or data is not an array');
+                            
+                            // If district is selected, load municipalities
+                            if (districtSelect.value && provinceSelect.value) {
+                                fetchMunicipalities(provinceSelect.value, districtSelect.value);
+                            }
                         }
                     })
-                    .catch(error => console.error('Error fetching districts:', error));
+                    .catch(error => {
+                        console.error('Error fetching districts:', error);
+                        // Add user-friendly error message
+                        districtSelect.innerHTML = '<option value="">Error loading districts</option>';
+                    });
             }
             
             // Function to fetch municipalities by province and district
             function fetchMunicipalities(provinceId, districtId = null) {
-                console.log('Fetching municipalities for province ID:', provinceId, 'district ID:', districtId);
                 let url = `includes/location_data.php?action=get_municipalities&province_id=${provinceId}`;
                 if (districtId) {
                     url += `&district_id=${districtId}`;
@@ -416,34 +464,32 @@ require_once 'includes/location_data.php';
                 
                 fetch(url)
                     .then(response => {
-                        console.log('Municipality response status:', response.status);
-                        return response.text(); // Use text() instead of json() for debugging
-                    })
-                    .then(text => {
-                        console.log('Raw municipality response:', text);
-                        // Convert text to JSON after logging
-                        let data;
-                        try {
-                            data = JSON.parse(text);
-                            console.log('Parsed municipality data:', data);
-                        } catch (e) {
-                            console.error('Error parsing JSON:', e);
-                            return;
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok: ' + response.status);
                         }
-                        
+                        return response.json();
+                    })
+                    .then(data => {
                         if (Array.isArray(data) && data.length > 0) {
                             data.forEach(municipality => {
                                 const option = document.createElement('option');
                                 option.value = municipality.id;
                                 option.textContent = municipality.municipality_name;
+                                
+                                // Set selected if matches form data
+                                if ('<?php echo isset($form_data['municipality_id']) ? $form_data['municipality_id'] : ''; ?>' === municipality.id) {
+                                    option.selected = true;
+                                }
+                                
                                 municipalitySelect.appendChild(option);
                             });
-                            console.log('Added', data.length, 'municipalities to dropdown');
-                        } else {
-                            console.log('No municipalities found or data is not an array');
                         }
                     })
-                    .catch(error => console.error('Error fetching municipalities:', error));
+                    .catch(error => {
+                        console.error('Error fetching municipalities:', error);
+                        // Add user-friendly error message
+                        municipalitySelect.innerHTML = '<option value="">Error loading municipalities</option>';
+                    });
             }
         });
     </script>
