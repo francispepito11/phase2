@@ -48,12 +48,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($support_type)) {
             $errors[] = "Support type is required";
-        }
-        if (empty($subject)) {
+        }        if (empty($subject)) {
             $errors[] = "Subject is required";
-        }
-        if (empty($message)) {
-            $errors[] = "Description of issue is required";
         }
         if (empty($gender)) {
             $errors[] = "Gender is required";
@@ -82,11 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'region' => $region,
                 'region_id' => $region,
                 'province_id' => $province_id,
-                'district_id' => $district_id,
-                'municipality_id' => $municipality_id,
+                'district_id' => $district_id,                'municipality_id' => $municipality_id,
                 'support_type' => $support_type,
                 'subject' => $subject,
-                'issue_description' => $message,
                 'status' => 'Pending',
                 'date_requested' => $current_datetime
             ];
