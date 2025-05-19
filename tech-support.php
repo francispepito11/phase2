@@ -331,14 +331,24 @@ unset($_SESSION['success_message']);
                 // Clear dependent dropdowns
                 districtSelect.innerHTML = '<option value="">Select District</option>';
                 municipalitySelect.innerHTML = '<option value="">Select City/Municipality</option>';
-                  if (provinceId) {
+                
+                if (provinceId) {
                     fetchDistricts(provinceId);
-                    fetchMunicipalities(provinceId); // Load municipalities when province changes
+                    fetchMunicipalities(provinceId);
                 }
             });
-              // Event listener for district change
+            
+            // Event listener for district change
             districtSelect.addEventListener('change', function() {
                 const districtId = this.value;
+                const provinceId = provinceSelect.value;
+                
+                // Clear municipality dropdown
+                municipalitySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+                
+                if (districtId && provinceId) {
+                    fetchMunicipalities(provinceId, districtId);
+                }
             });
             
             // Function to fetch all regions
@@ -452,9 +462,13 @@ unset($_SESSION['success_message']);
                         districtSelect.innerHTML = '<option value="">Error loading districts</option>';
                     });
             }
-              // Function to fetch municipalities by province
-            function fetchMunicipalities(provinceId) {
+            
+            // Function to fetch municipalities by province and district
+            function fetchMunicipalities(provinceId, districtId = null) {
                 let url = `includes/location_data.php?action=get_municipalities&province_id=${provinceId}`;
+                if (districtId) {
+                    url += `&district_id=${districtId}`;
+                }
                 
                 fetch(url)
                     .then(response => {
