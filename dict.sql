@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 15, 2025 at 09:33 AM
+-- Generation Time: May 19, 2025 at 09:01 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -229,9 +229,11 @@ INSERT INTO `service_types` (`id`, `service_code`, `service_name`, `description`
 CREATE TABLE `tech_support_requests` (
   `id` int(11) NOT NULL,
   `client_name` varchar(100) NOT NULL,
+  `first_name` varchar(50) NOT NULL,
+  `last_name` varchar(50) NOT NULL,
+  `middle_initial` varchar(1) DEFAULT NULL,
+  `gender` enum('male','female') NOT NULL,
   `agency` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `phone` varchar(20) NOT NULL,
   `region_id` int(11) NOT NULL,
   `province_id` int(11) NOT NULL,
   `district_id` int(11) DEFAULT NULL,
@@ -252,10 +254,10 @@ CREATE TABLE `tech_support_requests` (
 -- Dumping data for table `tech_support_requests`
 --
 
-INSERT INTO `tech_support_requests` (`id`, `client_name`, `agency`, `email`, `phone`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
-(1, 'Mohammad Rasheed M. Heding', 'IPHO Jolo', 'rasheed121099@gmail.com', '09918195487', 0, 0, 2, 0, 'WiFi Connectivity Issues', '1', '2025-05-15 02:04:29', '2025-05-15 00:31:40', '2025-05-15 01:29:02', NULL, 'Resolved', 'Fix applied to the client', '2025-05-15 02:04:29', '2025-05-15 07:29:02'),
-(2, 'Nidz Tuttuh', 'ILCD IX', 'nidzttuh@gmail.com', '09918295483', 12, 12, 1, 15, 'Other Technical Assistance', 'undertime need OT', '2025-05-15 02:29:14', '2025-05-15 01:24:42', NULL, NULL, 'In Progress', NULL, '2025-05-15 02:29:14', '2025-05-15 07:24:42'),
-(3, 'Juan Dela Cruz', 'DEPED', 'juancruz@gmail.com', '09918295483', 12, 12, 1, 15, 'GovNet Technical Support', 'Net', '2025-05-15 06:26:48', '2025-05-15 01:24:56', NULL, NULL, 'In Progress', NULL, '2025-05-15 06:26:48', '2025-05-15 07:24:56');
+INSERT INTO `tech_support_requests` (`id`, `client_name`, `first_name`, `last_name`, `middle_initial`, `gender`, `agency`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
+(1, 'Mohammad Rasheed M. Heding', 'Mohammad', 'Heding', 'M', 'male', 'IPHO Jolo', 0, 0, 2, 0, 'WiFi Connectivity Issues', '1', '2025-05-15 02:04:29', '2025-05-15 00:31:40', '2025-05-15 01:29:02', NULL, 'Resolved', 'Fix applied to the client', '2025-05-15 02:04:29', '2025-05-16 03:17:18'),
+(2, 'Nidz Tuttuh', 'Nidz', 'Tuttuh', '', 'male', 'ILCD IX', 12, 12, 1, 15, 'Other Technical Assistance', 'undertime need OT', '2025-05-15 02:29:14', '2025-05-15 01:24:42', NULL, NULL, 'In Progress', NULL, '2025-05-15 02:29:14', '2025-05-16 03:17:18'),
+(3, 'Juan Dela Cruz', 'Juan', 'Cruz', '', 'male', 'DEPED', 12, 12, 1, 15, 'GovNet Technical Support', 'Net', '2025-05-15 06:26:48', '2025-05-15 01:24:56', NULL, NULL, 'In Progress', NULL, '2025-05-15 06:26:48', '2025-05-16 03:17:18');
 
 -- --------------------------------------------------------
 

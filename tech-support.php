@@ -91,15 +91,47 @@ unset($_SESSION['success_message']);
             <div class="md:col-span-2">
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Submit a Support Request</h2>
+<<<<<<< HEAD
                     <form action="submit_support.php" method="post" enctype="multipart/form-data">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+=======
+                    <form action="submit_support.php" method="post" enctype="multipart/form-data">                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+>>>>>>> 62cf84f8be47b7893b6cfbc324a6d4b9ce2ed352
                             <div>
-                                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                                <input type="text" id="name" name="name" required 
-                                    value="<?php echo isset($form_data['name']) ? htmlspecialchars($form_data['name']) : ''; ?>"
+                                <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                <input type="text" id="first_name" name="first_name" required 
+                                    value="<?php echo isset($form_data['first_name']) ? htmlspecialchars($form_data['first_name']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
+<<<<<<< HEAD
+=======
+                                <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                                <input type="text" id="last_name" name="last_name" required 
+                                    value="<?php echo isset($form_data['last_name']) ? htmlspecialchars($form_data['last_name']) : ''; ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label for="middle_initial" class="block text-sm font-medium text-gray-700 mb-1">Middle Initial</label>
+                                <input type="text" id="middle_initial" name="middle_initial" maxlength="1"
+                                    value="<?php echo isset($form_data['middle_initial']) ? htmlspecialchars($form_data['middle_initial']) : ''; ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                            <select id="gender" name="gender" required
+                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                <option value="">Select Gender</option>
+                                <option value="male" <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'male') ? 'selected' : ''; ?>>Male</option>
+                                <option value="female" <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'female') ? 'selected' : ''; ?>>Female</option>
+                            </select>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+>>>>>>> 62cf84f8be47b7893b6cfbc324a6d4b9ce2ed352
                                 <label for="agency" class="block text-sm font-medium text-gray-700 mb-1">Agency/Organization</label>
                                 <input type="text" id="agency" name="agency" required 
                                     value="<?php echo isset($form_data['agency']) ? htmlspecialchars($form_data['agency']) : ''; ?>"
@@ -149,12 +181,12 @@ unset($_SESSION['success_message']);
                                 </select>
                             </div>
                         </div>
-                        
-                        <div class="mb-4">
+                          <div class="mb-4">
                             <label for="support_type" class="block text-sm font-medium text-gray-700 mb-1">Support Type</label>
                             <select id="support_type" name="support_type" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select Support Type</option>
+<<<<<<< HEAD
 
                                 <option value="Wifi Installation/Configuration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Wifi Installation/Configuration') ? 'selected' : ''; ?>>Wifi Installation/Configuration</option>
 
@@ -181,6 +213,19 @@ unset($_SESSION['success_message']);
                                 <option value="Provision of Technical Personnel/ Resoure Person" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Provision of Technical Personnel/ Resoure Person') ? 'selected' : ''; ?>>Provision of Technical Personnel/ Resoure Person</option>
                             
                                 <option value="Others" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Others') ? 'selected' : ''; ?>>Others</option>
+=======
+                                <?php
+                                // Fetch support types from service_types table
+                                $query = "SELECT service_code, service_name FROM service_types WHERE is_active = 1 ORDER BY service_name";
+                                $result = $conn->query($query);
+                                if ($result && $result->num_rows > 0) {
+                                    while ($row = $result->fetch_assoc()) {
+                                        $selected = (isset($form_data['support_type']) && $form_data['support_type'] == $row['service_code']) ? 'selected' : '';
+                                        echo '<option value="' . htmlspecialchars($row['service_code']) . '" ' . $selected . '>' . htmlspecialchars($row['service_name']) . '</option>';
+                                    }
+                                }
+                                ?>
+>>>>>>> 62cf84f8be47b7893b6cfbc324a6d4b9ce2ed352
                             </select>
                         </div>
                         
@@ -237,54 +282,7 @@ unset($_SESSION['success_message']);
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
                         info@dict.gov.ph
-                    </p>
-                </div>
-                
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Common Support Topics</h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                PNPKI Certificate Installation Guide
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                GovNet Connection Troubleshooting
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                iGovPhil Services Overview
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                Free WiFi Access Points Locations
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                FAQ - Frequently Asked Questions
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+                    </p>                </div>
             </div>
         </div>
     </div>
