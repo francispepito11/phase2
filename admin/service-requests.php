@@ -58,7 +58,8 @@ $total_pages = ceil($total_records / $records_per_page);
     <title>Service Requests - DICT Client Management System</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>        body {
+    <style>
+        body {
             font-family: 'Inter', sans-serif;
         }
         .table-container {
@@ -176,6 +177,8 @@ $total_pages = ceil($total_records / $records_per_page);
                                     <tr>
                                         <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
                                         <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
+                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
                                         <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agency</th>
                                         <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
                                         <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Support Type</th>
@@ -187,7 +190,7 @@ $total_pages = ceil($total_records / $records_per_page);
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     <?php if (empty($serviceRequests)): ?>
                                     <tr>
-                                        <td colspan="8" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td colspan="10" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                                             No service requests found.
                                         </td>
                                     </tr>
@@ -210,10 +213,13 @@ $total_pages = ceil($total_records / $records_per_page);
                                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($request['client_name']); ?></div>
                                                 <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['email']); ?></div>
                                             </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['gender']); ?></td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['age']); ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['agency']); ?></div>
                                                 <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['phone']); ?></div>
-                                            </td>                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($region_name); ?></td>
+                                            </td>
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($region_name); ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['support_type']); ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                 <?php echo date('M d, Y', strtotime($request['date_requested'])); ?>
@@ -241,11 +247,13 @@ $total_pages = ceil($total_records / $records_per_page);
                                                 <a href="view-request.php?id=<?php echo $request['id']; ?>" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
                                                 <a href="edit-request.php?id=<?php echo $request['id']; ?>" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
                                             </td>
-                                        </tr>                                        <?php endforeach; ?>
+                                        </tr>
+                                        <?php endforeach; ?>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
-                        </div>                        <!-- Pagination -->
+                        </div>
+                        <!-- Pagination -->
                         <?php if ($total_pages > 1): ?>
                         <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                             <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">

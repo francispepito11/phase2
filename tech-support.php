@@ -107,6 +107,27 @@ unset($_SESSION['success_message']);
                             </div>
                         </div>
                         
+                        <!-- Added Gender and Age Fields -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
+                                <select id="gender" name="gender" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male" <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'Male') ? 'selected' : ''; ?>>Male</option>
+                                    <option value="Female" <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'Female') ? 'selected' : ''; ?>>Female</option>
+                                    <option value="Other" <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'Other') ? 'selected' : ''; ?>>Other</option>
+                                    <option value="Prefer not to say" <?php echo (isset($form_data['gender']) && $form_data['gender'] == 'Prefer not to say') ? 'selected' : ''; ?>>Prefer not to say</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age</label>
+                                <input type="number" id="age" name="age" min="1" max="120" required 
+                                    value="<?php echo isset($form_data['age']) ? htmlspecialchars($form_data['age']) : ''; ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                        
                         <!-- Hidden fields for email and phone -->
                         <input type="hidden" id="email" name="email" value="support@example.com">
                         <input type="hidden" id="phone" name="phone" value="1234567890">
@@ -142,7 +163,6 @@ unset($_SESSION['success_message']);
                             <div>
                                 <label for="city_municipality" class="block text-sm font-medium text-gray-700 mb-1">City/Municipality</label>
                                 <select id="city_municipality" name="municipality_id" 
-                                    class="w-full px-3   name="municipality_id" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select City/Municipality</option>
                                     <!-- Municipalities will be loaded dynamically -->
@@ -155,31 +175,18 @@ unset($_SESSION['success_message']);
                             <select id="support_type" name="support_type" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select Support Type</option>
-
                                 <option value="Wifi Installation/Configuration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Wifi Installation/Configuration') ? 'selected' : ''; ?>>Wifi Installation/Configuration</option>
-
                                 <option value="GovNet Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'GovNet Technical Support') ? 'selected' : ''; ?>>GovNet Installation/Maintenance</option>
-
                                 <option value="IBPLS Virtual Assistance" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'IBPLS Virtual Assistance') ? 'selected' : ''; ?>>IBPLS Virtual Assistance</option>
-
                                 <option value="PNPKI Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'PNPKI Technical Support') ? 'selected' : ''; ?>>PNPKI Tech Support</option>
-
                                 <option value="Lending of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Lending of ICT Equipment') ? 'selected' : ''; ?>>Lending of ICT Equipment</option>
-
                                 <option value="Use of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of ICT Equipment') ? 'selected' : ''; ?>>Use of ICT Equipment</option>
-                                
                                 <option value="Use of Office Facility" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Office Facility') ? 'selected' : ''; ?>>Use of Office Facility</option>
-
                                 <option value="Use of Space, ICT Equipment and Internet Connectivity" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Space, ICT Equipment and Internet Connectivity') ? 'selected' : ''; ?>>Use of Space, ICT Equipment and Internet Connectivity</option>
-
                                 <option value="Sim Card Registration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Sim Card Registration') ? 'selected' : ''; ?>>Sim Card Registration</option>
-
                                 <option value="Comms-related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Comms-related concern') ? 'selected' : ''; ?>>Comms-related concern</option>
-
                                 <option value="Cybersecurity/Data Privacy related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Cybersecurity/Data Privacy related concern') ? 'selected' : ''; ?>>Cybersecurity/Data Privacy related concern</option>
-
                                 <option value="Provision of Technical Personnel/ Resoure Person" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Provision of Technical Personnel/ Resoure Person') ? 'selected' : ''; ?>>Provision of Technical Personnel/ Resoure Person</option>
-                            
                                 <option value="Others" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Others') ? 'selected' : ''; ?>>Others</option>
                             </select>
                         </div>
