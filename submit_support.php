@@ -20,11 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         // Log the start of form processing
         error_log("Processing support form submission");
-        $debug_info[] = "Processing form submission";
-        
-        // Validate and sanitize inputs
-        $name = isset($_POST['name']) ? sanitize_input($_POST['name']) : '';
-        $email = isset($_POST['email']) ? sanitize_input($_POST['email']) : '';
+        $debug_info[] = "Processing form submission";        // Validate and sanitize inputs
+        $first_name = isset($_POST['first_name']) ? sanitize_input($_POST['first_name']) : '';
+        $last_name = isset($_POST['last_name']) ? sanitize_input($_POST['last_name']) : '';
+        $middle_initial = isset($_POST['middle_initial']) ? sanitize_input($_POST['middle_initial']) : '';
         $agency = isset($_POST['agency']) ? sanitize_input($_POST['agency']) : '';
         $region = isset($_POST['region']) ? sanitize_input($_POST['region']) : '';
         $province_id = isset($_POST['province_id']) && !empty($_POST['province_id']) ? sanitize_input($_POST['province_id']) : null;
@@ -33,25 +32,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $support_type = isset($_POST['support_type']) ? sanitize_input($_POST['support_type']) : '';
         $subject = isset($_POST['subject']) ? sanitize_input($_POST['subject']) : '';
         $message = isset($_POST['message']) ? sanitize_input($_POST['message']) : '';
-        $phone = isset($_POST['phone']) ? sanitize_input($_POST['phone']) : '';
         $privacy = isset($_POST['privacy']) ? true : false;
         
         // Debug info
-        $debug_info[] = "Form data received and sanitized";
-        
-        // Basic validation
-        if (empty($name)) {
-            $errors[] = "Full name is required";
+        $debug_info[] = "Form data received and sanitized";        // Basic validation
+        if (empty($first_name)) {
+            $errors[] = "First name is required";
         }
         
-        if (empty($email)) {
-            $errors[] = "Email address is required";
-        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $errors[] = "Please enter a valid email address";
-        }
-        
-        if (empty($phone)) {
-            $errors[] = "Phone number is required";
+        if (empty($last_name)) {
+            $errors[] = "Last name is required";
         }
         
         if (empty($agency)) {
@@ -91,14 +81,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $debug_info[] = "Database connection successful";
             
             // Get current date and time
-            $current_datetime = date('Y-m-d H:i:s');
+            $current_datetime = date('Y-m-d H:i:s');            // Construct full name with middle initial if available
+            $full_name = $first_name;
+            if (!empty($middle_initial)) {
+                $full_name .= ' ' . $middle_initial . '.';
+            }
+            $full_name .= ' ' . $last_name;
             
             // Prepare data for insertion
             $support_data = [
-                'client_name' => $name,
+                'client_name' => $full_name,
+                'first_name' => $first_name,
+                'last_name' => $last_name,
+                'middle_initial' => $middle_initial,
                 'agency' => $agency,
-                'email' => $email,
-                'phone' => $phone,
                 'region_id' => $region,
                 'province_id' => $province_id,
                 'district_id' => $district_id,
@@ -164,15 +160,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             $table_exists = ($table_exists_result->num_rows > 0);
             $debug_info[] = "Table exists check: " . ($table_exists ? "Yes" : "No");
-            
-            if (!$table_exists) {
-                // Create the table if it doesn't exist
+              if (!$table_exists) {
                 $create_table_sql = "CREATE TABLE `tech_support_requests` (
                     `id` int(11) NOT NULL AUTO_INCREMENT,
                     `client_name` varchar(100) NOT NULL,
+                    `first_name` varchar(50) NOT NULL,
+                    `last_name` varchar(50) NOT NULL,
+                    `middle_initial` varchar(1) DEFAULT NULL,
                     `agency` varchar(100) NOT NULL,
-                    `email` varchar(100) NOT NULL,
-                    `phone` varchar(20) NOT NULL,
                     `region_id` int(11) NOT NULL,
                     `province_id` int(11) DEFAULT NULL,
                     `district_id` int(11) DEFAULT NULL,
