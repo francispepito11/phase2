@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 19, 2025 at 09:43 AM
+-- Generation Time: May 19, 2025 at 01:13 PM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -267,12 +267,8 @@ INSERT INTO `provinces` (`id`, `province_name`, `province_code`, `region_id`, `c
 (14, 'Davao Del Norte', 'DDN', 14, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (15, 'Maguindanao', 'MAG', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (16, 'Sulu', 'SUL', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-<<<<<<< HEAD
 (17, 'Zamboanga Sibugay', 'ZSP', 12, '2025-05-16 08:06:39', '2025-05-16 08:06:39'),
 (18, 'Zamboanga Del Sur', 'ZDS', 12, '2025-05-16 08:04:01', '2025-05-18 07:13:17');
-=======
-(17, 'Zamboanga Del Sur', 'ZDS', 12, '2025-05-19 09:00:00', '2025-05-19 09:00:00');
->>>>>>> 51982978a046658e78a60d62329f1b3e37cee38f
 
 -- --------------------------------------------------------
 
@@ -399,16 +395,21 @@ CREATE TABLE `support_requests` (
 
 CREATE TABLE `tech_support_requests` (
   `id` int(11) NOT NULL,
+  `firstname` varchar(50) NOT NULL,
+  `surname` varchar(50) NOT NULL,
+  `middle_initial` char(1) DEFAULT NULL,
   `client_name` varchar(100) NOT NULL,
   `agency` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `phone` varchar(20) NOT NULL,
+  `gender` enum('Male','Female','Other','Prefer not to say') NOT NULL,
+  `age` int(11) NOT NULL,
+  `region` varchar(50) NOT NULL,
   `region_id` int(11) NOT NULL,
   `province_id` int(11) NOT NULL,
   `district_id` int(11) DEFAULT NULL,
   `municipality_id` int(11) NOT NULL,
   `support_type` varchar(100) NOT NULL,
   `subject` varchar(255) DEFAULT NULL,
+  `message` text NOT NULL,
   `issue_description` text NOT NULL,
   `date_requested` timestamp NOT NULL DEFAULT current_timestamp(),
   `date_assisted` timestamp NULL DEFAULT NULL,
@@ -424,11 +425,8 @@ CREATE TABLE `tech_support_requests` (
 -- Dumping data for table `tech_support_requests`
 --
 
-INSERT INTO `tech_support_requests` (`id`, `client_name`, `agency`, `email`, `phone`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `subject`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
-(10, 'Francis Pepito', 'DICT', 'support@example.com', '1234567890', 12, 18, 13, 78, 'Use of Office Facility', 'HEHE', 'HEHE', '2025-05-18 01:15:27', NULL, NULL, NULL, 'Pending', NULL, '2025-05-18 07:15:27', '2025-05-18 07:15:27'),
-(11, 'Joshua Paltingca', 'PNP', 'support@example.com', '1234567890', 12, 18, 13, 20, 'Use of ICT Equipment', 'hehe', 'hehe', '2025-05-18 01:18:49', NULL, NULL, NULL, 'Pending', NULL, '2025-05-18 07:18:49', '2025-05-18 07:18:49'),
-(12, 'hehe xd', 'hehe', 'support@example.com', '1234567890', 12, 12, 1, 66, 'Sim Card Registration', 'hehe', 'hehe', '2025-05-18 01:19:08', NULL, NULL, NULL, 'Pending', NULL, '2025-05-18 07:19:08', '2025-05-18 07:19:08'),
-(13, 'test', 'test', 'support@example.com', '1234567890', 12, 17, 10, 53, 'Wifi Installation/Configuration', 'test', 'test', '2025-05-18 06:35:22', NULL, NULL, NULL, 'Pending', NULL, '2025-05-18 12:35:22', '2025-05-18 12:35:22');
+INSERT INTO `tech_support_requests` (`id`, `firstname`, `surname`, `middle_initial`, `client_name`, `agency`, `gender`, `age`, `region`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `subject`, `message`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
+(15, '', '', NULL, 'Bertizal', 'SCC', 'Male', 25, '', 12, 18, 13, 78, 'Use of Space, ICT Equipment and Internet Connectivity', 'Computer USE', '', '1', '2025-05-19 05:12:50', NULL, NULL, NULL, 'Pending', NULL, '2025-05-19 11:12:50', '2025-05-19 11:12:50');
 
 -- --------------------------------------------------------
 
@@ -678,17 +676,7 @@ ALTER TABLE `districts`
 -- AUTO_INCREMENT for table `municipalities`
 --
 ALTER TABLE `municipalities`
-<<<<<<< HEAD
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=79;
-=======
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
-
---
--- AUTO_INCREMENT for table `provinces`
---
-ALTER TABLE `provinces`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
->>>>>>> 51982978a046658e78a60d62329f1b3e37cee38f
 
 --
 -- AUTO_INCREMENT for table `regions`
@@ -706,7 +694,7 @@ ALTER TABLE `support_requests`
 -- AUTO_INCREMENT for table `tech_support_requests`
 --
 ALTER TABLE `tech_support_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

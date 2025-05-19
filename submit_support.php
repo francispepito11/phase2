@@ -16,7 +16,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         error_log("Processing support form submission at " . date('Y-m-d H:i:s'));
 
         // Validate and sanitize inputs
-        $first_name = isset($_POST['name']) ? sanitize_input($_POST['name']) : ''; // Using 'name' as full name for now, adjust if split
+        $first_name = isset($_POST['firstname']) ? sanitize_input($_POST['firstname']) : '';
+        $surname = isset($_POST['surname']) ? sanitize_input($_POST['surname']) : '';
+        $middle_initial = isset($_POST['middle_initial']) ? sanitize_input($_POST['middle_initial']) : '';
         $agency = isset($_POST['agency']) ? sanitize_input($_POST['agency']) : '';
         $region = isset($_POST['region']) ? sanitize_input($_POST['region']) : '';
         $province_id = isset($_POST['province_id']) && !empty($_POST['province_id']) ? sanitize_input($_POST['province_id']) : null;
@@ -33,7 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Basic validation
         if (empty($first_name)) {
-            $errors[] = "Full name is required";
+            $errors[] = "First name is required";
+        }
+        if (empty($surname)) {
+            $errors[] = "Surname is required";
         }
         if (empty($agency)) {
             $errors[] = "Agency/Organization is required";
@@ -67,10 +72,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Prepare data for insertion
             $support_data = [
-                'client_name' => $first_name, // Using full name as client_name for now
+                'firstname' => $first_name,
+                'surname' => $surname,
+                'middle_initial' => $middle_initial,
+                'client_name' => $first_name . ' ' . $middle_initial . ' ' . $surname, 
                 'agency' => $agency,
-                'email' => $email,
-                'phone' => $phone,
+                'gender' => $gender,
+                'age' => $age,
+                'region' => $region,
                 'region_id' => $region,
                 'province_id' => $province_id,
                 'district_id' => $district_id,
@@ -79,9 +88,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'subject' => $subject,
                 'issue_description' => $message,
                 'status' => 'Pending',
-                'date_requested' => $current_datetime,
-                'gender' => $gender,
-                'age' => $age
+                'date_requested' => $current_datetime
             ];
 
             // Insert record using CRUD function
