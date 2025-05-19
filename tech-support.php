@@ -91,7 +91,12 @@ unset($_SESSION['success_message']);
             <div class="md:col-span-2">
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Submit a Support Request</h2>
+<<<<<<< HEAD
+                    <form action="submit_support.php" method="post" enctype="multipart/form-data">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+=======
                     <form action="submit_support.php" method="post" enctype="multipart/form-data">                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+>>>>>>> 62cf84f8be47b7893b6cfbc324a6d4b9ce2ed352
                             <div>
                                 <label for="first_name" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
                                 <input type="text" id="first_name" name="first_name" required 
@@ -99,6 +104,8 @@ unset($_SESSION['success_message']);
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
                             <div>
+<<<<<<< HEAD
+=======
                                 <label for="last_name" class="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
                                 <input type="text" id="last_name" name="last_name" required 
                                     value="<?php echo isset($form_data['last_name']) ? htmlspecialchars($form_data['last_name']) : ''; ?>"
@@ -124,11 +131,19 @@ unset($_SESSION['success_message']);
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
+>>>>>>> 62cf84f8be47b7893b6cfbc324a6d4b9ce2ed352
                                 <label for="agency" class="block text-sm font-medium text-gray-700 mb-1">Agency/Organization</label>
                                 <input type="text" id="agency" name="agency" required 
                                     value="<?php echo isset($form_data['agency']) ? htmlspecialchars($form_data['agency']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
+                        </div>
+                        
+                        <!-- Hidden fields for email and phone -->
+                        <input type="hidden" id="email" name="email" value="support@example.com">
+                        <input type="hidden" id="phone" name="phone" value="1234567890">
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
                                 <select id="region" name="region" required
@@ -137,17 +152,17 @@ unset($_SESSION['success_message']);
                                     <!-- Regions will be loaded dynamically -->
                                 </select>
                             </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                             <div>
                                 <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Province</label>
-                                <select id="province" name="province_id" 
+                                <select id="province" name="province_id" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Province</option>
                                     <!-- Provinces will be loaded dynamically -->
                                 </select>
                             </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="district" class="block text-sm font-medium text-gray-700 mb-1">District</label>
                                 <select id="district" name="district_id" 
@@ -159,6 +174,7 @@ unset($_SESSION['success_message']);
                             <div>
                                 <label for="city_municipality" class="block text-sm font-medium text-gray-700 mb-1">City/Municipality</label>
                                 <select id="city_municipality" name="municipality_id" 
+                                    class="w-full px-3   name="municipality_id" 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select City/Municipality</option>
                                     <!-- Municipalities will be loaded dynamically -->
@@ -170,6 +186,34 @@ unset($_SESSION['success_message']);
                             <select id="support_type" name="support_type" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                 <option value="">Select Support Type</option>
+<<<<<<< HEAD
+
+                                <option value="Wifi Installation/Configuration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Wifi Installation/Configuration') ? 'selected' : ''; ?>>Wifi Installation/Configuration</option>
+
+                                <option value="GovNet Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'GovNet Technical Support') ? 'selected' : ''; ?>>GovNet Installation/Maintenance</option>
+
+                                <option value="IBPLS Virtual Assistance" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'IBPLS Virtual Assistance') ? 'selected' : ''; ?>>IBPLS Virtual Assistance</option>
+
+                                <option value="PNPKI Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'PNPKI Technical Support') ? 'selected' : ''; ?>>PNPKI Tech Support</option>
+
+                                <option value="Lending of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Lending of ICT Equipment') ? 'selected' : ''; ?>>Lending of ICT Equipment</option>
+
+                                <option value="Use of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of ICT Equipment') ? 'selected' : ''; ?>>Use of ICT Equipment</option>
+                                
+                                <option value="Use of Office Facility" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Office Facility') ? 'selected' : ''; ?>>Use of Office Facility</option>
+
+                                <option value="Use of Space, ICT Equipment and Internet Connectivity" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Space, ICT Equipment and Internet Connectivity') ? 'selected' : ''; ?>>Use of Space, ICT Equipment and Internet Connectivity</option>
+
+                                <option value="Sim Card Registration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Sim Card Registration') ? 'selected' : ''; ?>>Sim Card Registration</option>
+
+                                <option value="Comms-related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Comms-related concern') ? 'selected' : ''; ?>>Comms-related concern</option>
+
+                                <option value="Cybersecurity/Data Privacy related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Cybersecurity/Data Privacy related concern') ? 'selected' : ''; ?>>Cybersecurity/Data Privacy related concern</option>
+
+                                <option value="Provision of Technical Personnel/ Resoure Person" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Provision of Technical Personnel/ Resoure Person') ? 'selected' : ''; ?>>Provision of Technical Personnel/ Resoure Person</option>
+                            
+                                <option value="Others" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Others') ? 'selected' : ''; ?>>Others</option>
+=======
                                 <?php
                                 // Fetch support types from service_types table
                                 $query = "SELECT service_code, service_name FROM service_types WHERE is_active = 1 ORDER BY service_name";
@@ -181,6 +225,7 @@ unset($_SESSION['success_message']);
                                     }
                                 }
                                 ?>
+>>>>>>> 62cf84f8be47b7893b6cfbc324a6d4b9ce2ed352
                             </select>
                         </div>
                         
@@ -197,12 +242,8 @@ unset($_SESSION['success_message']);
                                 class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"><?php echo isset($form_data['message']) ? htmlspecialchars($form_data['message']) : ''; ?></textarea>
                         </div>
                         
-                        <div class="mb-4">
-                            <label for="attachment" class="block text-sm font-medium text-gray-700 mb-1">Attachment (optional)</label>
-                            <input type="file" id="attachment" name="attachment" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                            <p class="text-xs text-gray-500 mt-1">Allowed file formats: PDF, JPG, PNG (Max 5MB)</p>
-                        </div>
+                        <!-- Hidden field for attachment -->
+                        <input type="hidden" name="attachment_removed" value="1">
                         
                         <div class="flex items-center mb-4">
                             <input type="checkbox" id="privacy" name="privacy" required 
