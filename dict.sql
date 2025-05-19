@@ -126,7 +126,8 @@ INSERT INTO `provinces` (`id`, `province_name`, `province_code`, `region_id`, `c
 (13, 'Davao Del Sur', 'DDS', 14, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (14, 'Davao Del Norte', 'DDN', 14, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (15, 'Maguindanao', 'MAG', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(16, 'Sulu', 'SUL', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00');
+(16, 'Sulu', 'SUL', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
+(17, 'Zamboanga Del Sur', 'ZDS', 12, '2025-05-19 09:00:00', '2025-05-19 09:00:00');
 
 -- --------------------------------------------------------
 
@@ -467,7 +468,7 @@ ALTER TABLE `municipalities`
 -- AUTO_INCREMENT for table `provinces`
 --
 ALTER TABLE `provinces`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
 
 --
 -- AUTO_INCREMENT for table `regions`
