@@ -258,52 +258,7 @@ unset($_SESSION['success_message']);
                         info@dict.gov.ph
                     </p>
                 </div>
-                
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-3">Common Support Topics</h3>
-                    <ul class="space-y-2">
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                PNPKI Certificate Installation Guide
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                GovNet Connection Troubleshooting
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                iGovPhil Services Overview
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                Free WiFi Access Points Locations
-                            </a>
-                        </li>
-                        <li>
-                            <a href="#" class="flex items-center text-blue-600 hover:text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                                FAQ - Frequently Asked Questions
-                            </a>
-                        </li>
-                    </ul>
-                </div>
+  
             </div>
         </div>
     </div>
