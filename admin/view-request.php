@@ -46,14 +46,14 @@ if (!empty($request['region_id'])) {
 if (!empty($request['province_id'])) {
     $province = get_record_by_id('provinces', $request['province_id']);
     if ($province) {
-        $province_name = $province['name'];
+        $province_name = $province['province_name']; // Fixed key from 'name' to 'province_name'
     }
 }
 
 if (!empty($request['municipality_id'])) {
     $municipality = get_record_by_id('municipalities', $request['municipality_id']);
     if ($municipality) {
-        $municipality_name = $municipality['name'];
+        $municipality_name = $municipality['municipality_name']; // Fixed key from 'name' to 'municipality_name'
     }
 }
 
@@ -308,7 +308,8 @@ $success_message = isset($_GET['updated']) && $_GET['updated'] == 1 ? 'Support r
                                         <option value="Resolved" <?php echo $request['status'] === 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
                                         <option value="Cancelled" <?php echo $request['status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
                                     </select>
-                                </div>                                <div class="resolution-notes-container" id="resolution-notes-container" style="display: none;">
+                                </div>
+                                <div class="resolution-notes-container" id="resolution-notes-container" style="display: none;">
                                     <label for="resolution_notes" class="block text-sm font-medium text-gray-700">Resolution Notes</label>
                                     <textarea id="resolution_notes" name="resolution_notes" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-md"><?php echo isset($request['remarks']) ? htmlspecialchars($request['remarks']) : ''; ?></textarea>
                                 </div>
