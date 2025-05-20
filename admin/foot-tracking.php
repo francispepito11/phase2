@@ -34,22 +34,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 require_once '../includes/db_connect.php';
 require_once '../includes/crud_operations.php';
 
-// Get current month and year
-//$current_month = isset($_GET['month']) ? intval($_GET['month']) : intval(date('m'));
-//$current_year = isset($_GET['year']) ? intval($_GET['year']) : intval(date('Y'));
-
-// Validate month and year
-//if ($current_month < 1 || $current_month > 12) {
-//    $current_month = intval(date('m'));
-//}
-//if ($current_year < 2020 || $current_year > intval(date('Y'))) {
-//    $current_year = intval(date('Y'));
-//}
-
-// Format date for SQL query
-//$start_date = sprintf('%04d-%02d-01', $current_year, $current_month);
-//$end_date = date('Y-m-t', strtotime($start_date)); // Last day of the month
-
 // Get foot traffic data (focusing on "Use of ICT Equipment" and similar services)
 $foot_traffic_data = [];
 try {
@@ -111,14 +95,15 @@ try {
     // Get foot traffic by age group and gender per region
     $age_gender_data = [];
     try {
+        // Fixed the query to use age >= 60 for seniors instead of age > 60
         $sql = "SELECT 
                 r.region_name, 
                 SUM(CASE WHEN age < 18 AND gender = 'Male' THEN 1 ELSE 0 END) as youth_male,
                 SUM(CASE WHEN age < 18 AND gender = 'Female' THEN 1 ELSE 0 END) as youth_female,
                 SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Male' THEN 1 ELSE 0 END) as adult_male,
                 SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Female' THEN 1 ELSE 0 END) as adult_female,
-                SUM(CASE WHEN age > 60 AND gender = 'Male' THEN 1 ELSE 0 END) as senior_male,
-                SUM(CASE WHEN age > 60 AND gender = 'Female' THEN 1 ELSE 0 END) as senior_female
+                SUM(CASE WHEN age >= 60 AND gender = 'Male' THEN 1 ELSE 0 END) as senior_male,
+                SUM(CASE WHEN age >= 60 AND gender = 'Female' THEN 1 ELSE 0 END) as senior_female
             FROM tech_support_requests tsr
             LEFT JOIN regions r ON tsr.region_id = r.id
             WHERE tsr.date_requested BETWEEN ? AND ?
@@ -159,21 +144,52 @@ try {
         
         $stmt->close();
         
+        // Get monthly data by region, age group, and gender
+        $monthly_age_gender_data = [];
+        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        foreach ($months as $month_index => $month_name) {
+            $month_num = $month_index + 1;
+            $month_start = sprintf('%04d-%02d-01', $current_year, $month_num);
+            $month_end = date('Y-m-t', strtotime($month_start));
+            
+            // Skip months not in the current semester
+            if (($current_semester == 1 && $month_num > 6) || ($current_semester == 2 && $month_num < 7)) {
+                continue;
+            }
+            
+            $sql = "SELECT 
+                r.region_name,
+                SUM(CASE WHEN age < 18 AND gender = 'Male' THEN 1 ELSE 0 END) as youth_male,
+                SUM(CASE WHEN age < 18 AND gender = 'Female' THEN 1 ELSE 0 END) as youth_female,
+                SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Male' THEN 1 ELSE 0 END) as adult_male,
+                SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Female' THEN 1 ELSE 0 END) as adult_female,
+                SUM(CASE WHEN age >= 60 AND gender = 'Male' THEN 1 ELSE 0 END) as senior_male,
+                SUM(CASE WHEN age >= 60 AND gender = 'Female' THEN 1 ELSE 0 END) as senior_female
+            FROM tech_support_requests tsr
+            LEFT JOIN regions r ON tsr.region_id = r.id
+            WHERE tsr.date_requested BETWEEN ? AND ?
+            GROUP BY r.region_name
+            ORDER BY r.region_name";
+            
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param('ss', $month_start, $month_end);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            
+            $monthly_age_gender_data[$month_name] = [];
+            while ($row = $result->fetch_assoc()) {
+                $monthly_age_gender_data[$month_name][$row['region_name']] = $row;
+            }
+            
+            $stmt->close();
+        }
+        
     } catch (Exception $e) {
         $error_message = "Error: " . $e->getMessage();
     }
     
-    // Get comparison with previous month
-    //$prev_month = $current_month - 1;
-    //$prev_year = $current_year;
-    //if ($prev_month < 1) {
-    //    $prev_month = 12;
-    //    $prev_year--;
-    //}
-    
-    //$prev_start_date = sprintf('%04d-%02d-01', $prev_year, $prev_month);
-    //$prev_end_date = date('Y-m-t', strtotime($prev_start_date));
-    
+    // Get comparison with previous semester
     $prev_semester = $current_semester == 1 ? 2 : 1;
     $prev_year = $current_year;
     if ($current_semester == 1) {
@@ -213,9 +229,6 @@ try {
     $error_message = "Error: " . $e->getMessage();
 }
 
-// Get month name
-//$month_name = date('F Y', mktime(0, 0, 0, $current_month, 1, $current_year));
-//$prev_month_name = date('F Y', mktime(0, 0, 0, $prev_month, 1, $prev_year));
 // Get semester name
 $semester_name = $current_semester === 1 ? "First Semester (January-June) " . $current_year : "Second Semester (July-December) " . $current_year;
 $prev_semester = $current_semester === 1 ? 2 : 1;
@@ -242,6 +255,97 @@ $prev_month_name = $prev_semester_name;
             height: 100vh;
             overflow-y: auto;
             max-width: 100%;
+        }
+        .table-container {
+            overflow-x: auto;
+            max-width: 100%;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f8fafc;
+        }
+        .region-column {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 10;
+        }
+        .age-group-header {
+            background-color: #f1f5f9;
+        }
+        /* New styles for modern table */
+        .modern-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .modern-table th, .modern-table td {
+            padding: 12px 15px;
+            text-align: left;
+            border: 1px solid #e2e8f0;
+        }
+        .modern-table th {
+            background-color: #f9fafb;
+            font-weight: 500;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+            letter-spacing: 0.05em;
+        }
+        .modern-table td {
+            font-size: 0.875rem;
+            color: #4a5568;
+        }
+        .table-header {
+            margin-bottom: 1.5rem;
+        }
+        .table-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #2d3748;
+        }
+        .table-header p {
+            font-size: 0.875rem;
+            color: #718096;
+        }
+        .responsive-table-container {
+            overflow-x: auto;
+        }
+        /* Progress bar styles */
+        .progress-bar-bg {
+            background-color: #edf2f7;
+            border-radius: 4px;
+            height: 8px;
+            width: 100%;
+            position: relative;
+        }
+        .progress-bar-fill {
+            background-color: #38a169;
+            height: 100%;
+            border-radius: 4px;
+        }
+        /* Status badge styles */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+        }
+        .status-badge-blue {
+            background-color: #ebf8ff;
+            color: #3182ce;
+        }
+        .status-badge-green {
+            background-color: #f0fff4;
+            color: #48bb78;
         }
     </style>
 </head>
@@ -357,8 +461,26 @@ $prev_month_name = $prev_semester_name;
                 </div>
 
                 <!-- Charts -->
-                                        
-                <!-- Age Group and Gender Table -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Service Type Distribution</h3>
+                        <div class="h-80">
+                            <canvas id="serviceTypeChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-white rounded-lg shadow-md p-6">
+                        <h3 class="text-lg font-medium text-gray-900 mb-4">Daily Foot Traffic</h3>
+                        <div class="h-80">
+                            <canvas id="dailyTrafficChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detailed Table -->
+               
+
+                <!-- Age Group and Gender Table - New Format -->
                 <div class="bg-white rounded-lg shadow-md mt-6">
                     <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
@@ -369,54 +491,53 @@ $prev_month_name = $prev_semester_name;
                         </p>
                     </div>
                     
-                    <div class="overflow-x-auto">
+                    <div class="table-container">
                         <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                            <thead>
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
-                                    <th scope="col" colspan="2" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Youth (<18)</th>
-                                    <th scope="col" colspan="2" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Adults (18-59)</th>
-                                    <th scope="col" colspan="2" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seniors (>60)</th>
+                                    <th rowspan="2" class="region-column px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
+                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Youth(&lt;18)</th>
+                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Adults(18-59)</th>
+                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seniors(≥60)</th>
                                 </tr>
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
                                 </tr>
                             </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
+                            <tbody>
                                 <?php if (empty($age_gender_data)): ?>
                                 <tr>
-                                    <td colspan="7" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                    <td colspan="7" class="px-4 py-2 text-center text-sm text-gray-500">
                                         No data available for this semester.
                                     </td>
                                 </tr>
                                 <?php else: ?>
                                     <?php foreach ($age_gender_data as $item): ?>
                                     <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                        <td class="region-column px-4 py-2 text-sm font-medium text-gray-900">
                                             <?php echo htmlspecialchars($item['region_name']); ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
                                             <?php echo $item['youth_male']; ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
                                             <?php echo $item['youth_female']; ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
                                             <?php echo $item['adult_male']; ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
                                             <?php echo $item['adult_female']; ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
                                             <?php echo $item['senior_male']; ?>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
                                             <?php echo $item['senior_female']; ?>
                                         </td>
                                     </tr>
@@ -427,8 +548,116 @@ $prev_month_name = $prev_semester_name;
                     </div>
                 </div>
 
-                <!-- Monthly Gender Count by Support Type Table -->
-                
+                <!-- Monthly Age Group and Gender Table -->
+                <div class="bg-white rounded-lg shadow-md mt-6">
+                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900">
+                            Monthly Foot Traffic by Age Group and Gender per Region for <?php echo $semester_name; ?>
+                        </h3>
+                        <p class="mt-1 max-w-2xl text-sm text-gray-500">
+                            Breakdown of visitors by month, age group, and gender.
+                        </p>
+                    </div>
+                    
+                    <div class="table-container overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead>
+                                <tr>
+                                    <th rowspan="3" class="region-column px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">Region</th>
+                                    <th colspan="6" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Age Group</th>
+                                    <?php 
+                                    $semester_months = $current_semester == 1 
+                                        ? ['January', 'February', 'March', 'April', 'May', 'June'] 
+                                        : ['July', 'August', 'September', 'October', 'November', 'December'];
+                                    
+                                    foreach ($semester_months as $month) {
+                                        echo '<th colspan="2" class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">' . $month . '</th>';
+                                    }
+                                    ?>
+                                </tr>
+                                <tr>
+                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Youth(&lt;18)</th>
+                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Adults(18-59)</th>
+                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seniors(≥60)</th>
+                                    <?php 
+                                    foreach ($semester_months as $month) {
+                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>';
+                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>';
+                                    }
+                                    ?>
+                                </tr>
+                                <tr>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
+                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
+                                    <?php 
+                                    foreach ($semester_months as $month) {
+                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>';
+                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>';
+                                    }
+                                    ?>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($age_gender_data)): ?>
+                                <tr>
+                                    <td colspan="<?php echo 7 + (count($semester_months) * 2); ?>" class="px-4 py-2 text-center text-sm text-gray-500">
+                                        No data available for this semester.
+                                    </td>
+                                </tr>
+                                <?php else: ?>
+                                    <?php foreach ($age_gender_data as $item): ?>
+                                    <tr>
+                                        <td class="region-column px-4 py-2 text-sm font-medium text-gray-900 sticky left-0 bg-white">
+                                            <?php echo htmlspecialchars($item['region_name']); ?>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                            <?php echo $item['youth_male']; ?>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                            <?php echo $item['youth_female']; ?>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                            <?php echo $item['adult_male']; ?>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                            <?php echo $item['adult_female']; ?>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                            <?php echo $item['senior_male']; ?>
+                                        </td>
+                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                            <?php echo $item['senior_female']; ?>
+                                        </td>
+                                        
+                                        <?php foreach ($semester_months as $month): ?>
+                                            <?php 
+                                            $month_data = isset($monthly_age_gender_data[$month][$item['region_name']]) 
+                                                ? $monthly_age_gender_data[$month][$item['region_name']] 
+                                                : ['youth_male' => 0, 'youth_female' => 0, 'adult_male' => 0, 'adult_female' => 0, 'senior_male' => 0, 'senior_female' => 0];
+                                            
+                                            $male_total = $month_data['youth_male'] + $month_data['adult_male'] + $month_data['senior_male'];
+                                            $female_total = $month_data['youth_female'] + $month_data['adult_female'] + $month_data['senior_female'];
+                                            ?>
+                                            <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                                <?php echo $male_total; ?>
+                                            </td>
+                                            <td class="px-4 py-2 text-center text-sm text-gray-500">
+                                                <?php echo $female_total; ?>
+                                            </td>
+                                        <?php endforeach; ?>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Monthly Gender Count by Region Table -->
                 <div class="bg-white rounded-lg shadow-md mt-6">
                     <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
                         <h3 class="text-lg leading-6 font-medium text-gray-900">
