@@ -230,9 +230,11 @@ unset($_SESSION['success_message']);
                 </div>
             </div>
             
-            <!-- Right: Quick Links and Support Info -->
-            <div>
+            <!-- Right: Quick Links and Support Info -->            <div>
                 <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                    <div class="flex flex-col items-center mb-4">
+                        <img src="images/dict-logo.png" alt="DICT Logo" class="h-24 w-auto mb-4">
+                    </div>
                     <h3 class="text-lg font-semibold text-gray-800 mb-3">Support Hours</h3>
                     <p class="text-gray-600 mb-2">Monday to Friday: 8:00 AM - 5:00 PM</p>
                     <p class="text-gray-600 mb-4">Excluding holidays</p>
