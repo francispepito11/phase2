@@ -211,13 +211,13 @@ $total_pages = ceil($total_records / $records_per_page);
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo $count++; ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($request['client_name']); ?></div>
-                                                <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['email']); ?></div>
+                                                <!-- <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['email']); ?></div> -->
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['gender']); ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['age']); ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['agency']); ?></div>
-                                                <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['phone']); ?></div>
+                                                <!-- <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['phone']); ?></div> -->
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($region_name); ?></td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['support_type']); ?></td>
