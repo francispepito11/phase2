@@ -310,7 +310,7 @@ $success_message = isset($_GET['updated']) && $_GET['updated'] == 1 ? 'Support r
                                     </select>
                                 </div>
                                 <div class="resolution-notes-container" id="resolution-notes-container" style="display: none;">
-                                    <label for="resolution_notes" class="block text-sm font-medium text-gray-700">Resolution Notes</label>
+                                    <label for="resolution_notes" class="block text-sm font-medium text-gray-700">Remarks</label>
                                     <textarea id="resolution_notes" name="resolution_notes" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-md"><?php echo isset($request['remarks']) ? htmlspecialchars($request['remarks']) : ''; ?></textarea>
                                 </div>
                             </div>
