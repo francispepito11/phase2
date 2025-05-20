@@ -290,60 +290,8 @@ $success_message = isset($_GET['updated']) && $_GET['updated'] == 1 ? 'Support r
                         </dl>
                     </div>
                 </div>
-                
-                <!-- Update Status Form -->
-                <div class="mt-6 bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div class="px-4 py-5 sm:px-6">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">Update Request Status</h3>
-                    </div>
-                    <div class="border-t border-gray-200 px-4 py-5 sm:p-6">
-                        <form action="view-request.php?id=<?php echo $id; ?>" method="post">
-                            <input type="hidden" name="action" value="update_status">
-                            <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                                <div>
-                                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                                    <select id="status" name="status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                        <option value="Pending" <?php echo $request['status'] === 'Pending' ? 'selected' : ''; ?>>Pending</option>
-                                        <option value="In Progress" <?php echo $request['status'] === 'In Progress' ? 'selected' : ''; ?>>In Progress</option>
-                                        <option value="Resolved" <?php echo $request['status'] === 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
-                                        <option value="Cancelled" <?php echo $request['status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                    </select>
-                                </div>
-                                <div class="resolution-notes-container" id="resolution-notes-container" style="display: none;">
-                                    <label for="resolution_notes" class="block text-sm font-medium text-gray-700">Remarks</label>
-                                    <textarea id="resolution_notes" name="resolution_notes" rows="3" class="mt-1 block w-full shadow-sm sm:text-sm focus:ring-blue-500 focus:border-blue-500 border border-gray-300 rounded-md"><?php echo isset($request['remarks']) ? htmlspecialchars($request['remarks']) : ''; ?></textarea>
-                                </div>
-                            </div>
-                            <div class="mt-6">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    Update Status
-                                </button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
-
-    <script>
-        // Show/hide resolution notes based on status
-        const statusSelect = document.getElementById('status');
-        const resolutionNotesContainer = document.getElementById('resolution-notes-container');
-        
-        function toggleResolutionNotes() {
-            if (statusSelect.value === 'Resolved') {
-                resolutionNotesContainer.style.display = 'block';
-            } else {
-                resolutionNotesContainer.style.display = 'none';
-            }
-        }
-        
-        // Initialize on page load
-        toggleResolutionNotes();
-        
-        // Add event listener for status changes
-        statusSelect.addEventListener('change', toggleResolutionNotes);
-    </script>
 </body>
 </html>
