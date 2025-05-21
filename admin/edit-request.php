@@ -58,7 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         'district_id' => !empty($_POST['district_id']) ? (int)$_POST['district_id'] : null,
         'municipality_id' => (int)$_POST['municipality_id'],
         'support_type' => sanitize_input($_POST['support_type']),
-        'issue_description' => sanitize_input($_POST['issue_description']),
         'status' => sanitize_input($_POST['status']),
         'remarks' => sanitize_input($_POST['remarks'])
     ];
@@ -240,10 +239,6 @@ $regions = read_records('regions', ['*'], [], 'region_name ASC');
                                     <?php endforeach; ?>
                                 </select>
                             </div>
-
-                            <div class="col-span-6">
-                                <label for="issue_description" class="block text-sm font-medium text-gray-700">Issue Description</label>
-                                <textarea name="issue_description" id="issue_description" rows="4" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><?php echo htmlspecialchars($request['issue_description']); ?></textarea>
                             </div>
 
                             <!-- Status Information -->
