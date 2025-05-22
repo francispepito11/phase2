@@ -203,7 +203,8 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
                         </tr>
                         <?php else: ?>
                             <?php 
-                            $count = ((int)$current_page - 1) * (int)$records_per_page + 1;
+                            // Fix the count calculation to ensure it's always positive
+                            $count = max(1, ((int)$current_page - 1) * (int)$records_per_page + 1);
                             foreach ($serviceRequests as $request): 
                                 // Get region name
                                 $region_name = "";
@@ -296,43 +297,68 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
     </footer>
     
     <!-- Include Page Wrapper End -->
-    
+   
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JavaScript for Sidebar Dropdown -->
     <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all Bootstrap dropdowns and collapses
-        var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
-        var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
-            return new bootstrap.Dropdown(dropdownToggleEl);
-        });
-        
-        var collapseElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="collapse"]'));
-        var collapseList = collapseElementList.map(function(collapseToggleEl) {
-            return new bootstrap.Collapse(collapseToggleEl.getAttribute('data-bs-target') || collapseToggleEl.getAttribute('href'), {
-                toggle: false
-            });
-        });
-        
-        // Manually handle Tech Supports dropdown
-        var techSupportsToggle = document.querySelector('[data-bs-target="#techSupportsSubmenu"]');
-        if (techSupportsToggle) {
-            techSupportsToggle.addEventListener('click', function(e) {
-                e.preventDefault();
-                var target = document.querySelector(this.getAttribute('data-bs-target'));
-                if (target) {
-                    if (target.classList.contains('show')) {
-                        bootstrap.Collapse.getInstance(target).hide();
-                    } else {
-                        bootstrap.Collapse.getInstance(target).show();
-                    }
-                }
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap JS
+    if (typeof bootstrap !== 'undefined') {
+        // Initialize all dropdowns
+        var dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        if (dropdownElementList.length > 0) {
+            dropdownElementList.forEach(function(element) {
+                new bootstrap.Dropdown(element);
             });
         }
-    });
-    </script>
+        
+        // Initialize Tech Supports dropdown in sidebar
+        var techSupportsToggle = document.querySelector('[data-bs-target="#techSupportsSubmenu"]');
+        if (techSupportsToggle) {
+            var techSupportsSubmenu = document.querySelector('#techSupportsSubmenu');
+            if (techSupportsSubmenu) {
+                // Create collapse instance if it doesn't exist
+                var bsCollapse;
+                try {
+                    bsCollapse = bootstrap.Collapse.getInstance(techSupportsSubmenu);
+                    if (!bsCollapse) {
+                        bsCollapse = new bootstrap.Collapse(techSupportsSubmenu, {
+                            toggle: false
+                        });
+                    }
+                } catch (e) {
+                    bsCollapse = new bootstrap.Collapse(techSupportsSubmenu, {
+                        toggle: false
+                    });
+                }
+                
+                // Check if the current page is under Tech Supports
+                var currentPage = '<?php echo basename($_SERVER["PHP_SELF"]); ?>';
+                var techSupportPages = ['service-requests.php', 'support-summary.php', 'foot-tracking.php', 'view-request.php', 'edit-request.php'];
+                
+                if (techSupportPages.includes(currentPage)) {
+                    // Show the submenu
+                    techSupportsSubmenu.classList.add('show');
+                }
+                
+                // Add click event listener
+                techSupportsToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (techSupportsSubmenu.classList.contains('show')) {
+                        techSupportsSubmenu.classList.remove('show');
+                    } else {
+                        techSupportsSubmenu.classList.add('show');
+                    }
+                });
+            }
+        }
+    } else {
+        console.error('Bootstrap JS not loaded');
+    }
+});
+</script>
 </body>
 </html>
