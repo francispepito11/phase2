@@ -91,36 +91,28 @@ unset($_SESSION['success_message']);
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <h2 class="text-xl font-semibold text-gray-800 mb-4">Submit a Support Request</h2>
                     <form action="submit_support.php" method="post" enctype="multipart/form-data">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">                            <div class="grid grid-cols-3 gap-4">
-                                <div>
-                                    <label for="firstname" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-                                    <input type="text" id="firstname" name="firstname" required 
-                                        value="<?php echo isset($form_data['firstname']) ? htmlspecialchars($form_data['firstname']) : ''; ?>"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label for="surname" class="block text-sm font-medium text-gray-700 mb-1">Surname</label>
-                                    <input type="text" id="surname" name="surname" required 
-                                        value="<?php echo isset($form_data['surname']) ? htmlspecialchars($form_data['surname']) : ''; ?>"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                                <div>
-                                    <label for="middle_initial" class="block text-sm font-medium text-gray-700 mb-1">M.I.</label>
-                                    <input type="text" id="middle_initial" name="middle_initial" maxlength="1" 
-                                        value="<?php echo isset($form_data['middle_initial']) ? htmlspecialchars($form_data['middle_initial']) : ''; ?>"
-                                        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                </div>
-                            </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
-                                <label for="agency" class="block text-sm font-medium text-gray-700 mb-1">Agency/Organization</label>
-                                <input type="text" id="agency" name="agency" required 
-                                    value="<?php echo isset($form_data['agency']) ? htmlspecialchars($form_data['agency']) : ''; ?>"
+                                <label for="firstname" class="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                                <input type="text" id="firstname" name="firstname" required 
+                                    value="<?php echo isset($form_data['firstname']) ? htmlspecialchars($form_data['firstname']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
-                        </div>
-                        
-                        <!-- Added Gender and Age Fields -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+    
+                            <div>
+                                <label for="middle_initial" class="block text-sm font-medium text-gray-700 mb-1">M.I.</label>
+                                <input type="text" id="middle_initial" name="middle_initial" maxlength="1" 
+                                    value="<?php echo isset($form_data['middle_initial']) ? htmlspecialchars($form_data['middle_initial']) : ''; ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+
+                            <div>
+                                <label for="surname" class="block text-sm font-medium text-gray-700 mb-1">Surname</label>
+                                <input type="text" id="surname" name="surname" required 
+                                    value="<?php echo isset($form_data['surname']) ? htmlspecialchars($form_data['surname']) : ''; ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            
                             <div>
                                 <label for="gender" class="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                                 <select id="gender" name="gender" required
@@ -133,19 +125,15 @@ unset($_SESSION['success_message']);
                                 </select>
                             </div>
                             <div>
-                                <label for="age" class="block text-sm font-medium text-gray-700 mb-1">Age</label>
-                                <input type="number" id="age" name="age" min="1" max="120" required 
-                                    value="<?php echo isset($form_data['age']) ? htmlspecialchars($form_data['age']) : ''; ?>"
+                                <label for="birthdate" class="block text-sm font-medium text-gray-700 mb-1">Birth Date</label>
+                                <input type="date" id="birthdate" name="birthdate" required 
+                                    value="<?php echo isset($form_data['birthdate']) ? htmlspecialchars($form_data['birthdate']) : ''; ?>"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                             </div>
-                        </div>
-                        
-                        <!-- Hidden fields for email and phone -->
-                        <input type="hidden" id="email" name="email" value="support@example.com">
-                        <input type="hidden" id="phone" name="phone" value="1234567890">
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                            <div>                                <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
+                            <input type="hidden" id="email" name="email" value="support@example.com">
+                            <input type="hidden" id="phone" name="phone" value="1234567890">
+                            <div>
+                                <label for="region" class="block text-sm font-medium text-gray-700 mb-1">Region</label>
                                 <select id="region" name="region" required
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Region</option>
@@ -160,9 +148,6 @@ unset($_SESSION['success_message']);
                                     <!-- Provinces will be loaded dynamically -->
                                 </select>
                             </div>
-                        </div>
-                        
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                             <div>
                                 <label for="district" class="block text-sm font-medium text-gray-700 mb-1">District</label>
                                 <select id="district" name="district_id" 
@@ -179,36 +164,53 @@ unset($_SESSION['success_message']);
                                     <!-- Municipalities will be loaded dynamically -->
                                 </select>
                             </div>
+                            <div>
+                                <label for="support_type" class="block text-sm font-medium text-gray-700 mb-1">Support Type</label>
+                                <select id="support_type" name="support_type" required
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select Support Type</option>
+                                    <option value="Wifi Installation/Configuration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Wifi Installation/Configuration') ? 'selected' : ''; ?>>Wifi Installation/Configuration</option>
+                                    <option value="GovNet Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'GovNet Technical Support') ? 'selected' : ''; ?>>GovNet Installation/Maintenance</option>
+                                    <option value="IBPLS Virtual Assistance" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'IBPLS Virtual Assistance') ? 'selected' : ''; ?>>IBPLS Virtual Assistance</option>
+                                    <option value="PNPKI Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'PNPKI Technical Support') ? 'selected' : ''; ?>>PNPKI Tech Support</option>
+                                    <option value="Lending of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Lending of ICT Equipment') ? 'selected' : ''; ?>>Lending of ICT Equipment</option>
+                                    <option value="Use of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of ICT Equipment') ? 'selected' : ''; ?>>Use of ICT Equipment</option>
+                                    <option value="Use of Office Facility" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Office Facility') ? 'selected' : ''; ?>>Use of Office Facility</option>
+                                    <option value="Use of Space, ICT Equipment and Internet Connectivity" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Space, ICT Equipment and Internet Connectivity') ? 'selected' : ''; ?>>Use of Space, ICT Equipment and Internet Connectivity</option>
+                                    <option value="Sim Card Registration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Sim Card Registration') ? 'selected' : ''; ?>>Sim Card Registration</option>
+                                    <option value="Comms-related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Comms-related concern') ? 'selected' : ''; ?>>Comms-related concern</option>
+                                    <option value="Cybersecurity/Data Privacy related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Cybersecurity/Data Privacy related concern') ? 'selected' : ''; ?>>Cybersecurity/Data Privacy related concern</option>
+                                    <option value="Provision of Technical Personnel/ Resoure Person" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Provision of Technical Personnel/ Resoure Person') ? 'selected' : ''; ?>>Provision of Technical Personnel/ Resoure Person</option>
+                                    <option value="Others" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Others') ? 'selected' : ''; ?>>Others</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Service Provided</label>
+                                <input type="text" id="subject" name="subject" required 
+                                    value="<?php echo isset($form_data['subject']) ? htmlspecialchars($form_data['subject']) : ''; ?>"
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+
+                            <div>
+                                <label for="agency" class="block text-sm font-medium text-gray-700 mb-1">Sector</label>
+                                <select id="agency" name="agency" required 
+                                    class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                                    <option value="">Select Sector</option>
+                                    <option value="DBM" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DBM') ? 'selected' : ''; ?>>DBM</option>
+                                    <option value="DILG" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DILG') ? 'selected' : ''; ?>>DILG</option>
+                                    <option value="DEPED" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DEPED') ? 'selected' : ''; ?>>DEPED</option>
+                                    <option value="CHED" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'CHED') ? 'selected' : ''; ?>>CHED</option>
+                                    <option value="DSWD" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DSWD') ? 'selected' : ''; ?>>DSWD</option>
+                                    <option value="DOLE" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOLE') ? 'selected' : ''; ?>>DOLE</option>
+                                    <option value="DOH" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOH') ? 'selected' : ''; ?>>DOH</option>
+                                    <option value="DOF" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOF') ? 'selected' : ''; ?>>DOF</option>
+                                    <option value="DTI" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DTI') ? 'selected' : ''; ?>>DTI</option>
+                                    <option value="DA" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DA') ? 'selected' : ''; ?>>DA</option>
+                                    <option value="DOE" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOE') ? 'selected' : ''; ?>>DOE</option>
+                                </select>
+                            </div>
                         </div>
-                        
-                        <div class="mb-4">
-                            <label for="support_type" class="block text-sm font-medium text-gray-700 mb-1">Support Type</label>
-                            <select id="support_type" name="support_type" required
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                                <option value="">Select Support Type</option>
-                                <option value="Wifi Installation/Configuration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Wifi Installation/Configuration') ? 'selected' : ''; ?>>Wifi Installation/Configuration</option>
-                                <option value="GovNet Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'GovNet Technical Support') ? 'selected' : ''; ?>>GovNet Installation/Maintenance</option>
-                                <option value="IBPLS Virtual Assistance" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'IBPLS Virtual Assistance') ? 'selected' : ''; ?>>IBPLS Virtual Assistance</option>
-                                <option value="PNPKI Technical Support" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'PNPKI Technical Support') ? 'selected' : ''; ?>>PNPKI Tech Support</option>
-                                <option value="Lending of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Lending of ICT Equipment') ? 'selected' : ''; ?>>Lending of ICT Equipment</option>
-                                <option value="Use of ICT Equipment" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of ICT Equipment') ? 'selected' : ''; ?>>Use of ICT Equipment</option>
-                                <option value="Use of Office Facility" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Office Facility') ? 'selected' : ''; ?>>Use of Office Facility</option>
-                                <option value="Use of Space, ICT Equipment and Internet Connectivity" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Use of Space, ICT Equipment and Internet Connectivity') ? 'selected' : ''; ?>>Use of Space, ICT Equipment and Internet Connectivity</option>
-                                <option value="Sim Card Registration" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Sim Card Registration') ? 'selected' : ''; ?>>Sim Card Registration</option>
-                                <option value="Comms-related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Comms-related concern') ? 'selected' : ''; ?>>Comms-related concern</option>
-                                <option value="Cybersecurity/Data Privacy related concern" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Cybersecurity/Data Privacy related concern') ? 'selected' : ''; ?>>Cybersecurity/Data Privacy related concern</option>
-                                <option value="Provision of Technical Personnel/ Resoure Person" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Provision of Technical Personnel/ Resoure Person') ? 'selected' : ''; ?>>Provision of Technical Personnel/ Resoure Person</option>
-                                <option value="Others" <?php echo (isset($form_data['support_type']) && $form_data['support_type'] == 'Others') ? 'selected' : ''; ?>>Others</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label for="subject" class="block text-sm font-medium text-gray-700 mb-1">Service Provided</label>
-                            <input type="text" id="subject" name="subject" required 
-                                value="<?php echo isset($form_data['subject']) ? htmlspecialchars($form_data['subject']) : ''; ?>"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                        </div>
-                          <!-- Hidden field for attachment -->
+                        <!-- Hidden field for attachment -->
                         <input type="hidden" name="attachment_removed" value="1">
                         
                         <div class="flex items-center mb-4">
@@ -221,7 +223,7 @@ unset($_SESSION['success_message']);
                         
                         <div>
                             <button type="submit" 
-                                class="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                class="w-50px py-2 px-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                                 Submit Support Request
                             </button>
                         </div>
