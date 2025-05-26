@@ -28,7 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $subject = isset($_POST['subject']) ? sanitize_input($_POST['subject']) : '';
         $message = isset($_POST['message']) ? sanitize_input($_POST['message']) : '';
         $gender = isset($_POST['gender']) ? sanitize_input($_POST['gender']) : '';
-        $age = isset($_POST['age']) && !empty($_POST['age']) ? (int)sanitize_input($_POST['age']) : null;
+        $birthdate = isset($_POST['birthdate']) ? sanitize_input($_POST['birthdate']) : '';
         $email = isset($_POST['email']) ? sanitize_input($_POST['email']) : 'support@example.com'; // Default email
         $phone = isset($_POST['phone']) ? sanitize_input($_POST['phone']) : '1234567890'; // Default phone
         $privacy = isset($_POST['privacy']) ? true : false;
@@ -54,8 +54,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($gender)) {
             $errors[] = "Gender is required";
         }
-        if (empty($age) || $age < 1 || $age > 120) {
-            $errors[] = "Age must be between 1 and 120";
+        if (empty($birthdate)) {
+            $errors[] = "Birth date is required";
+        } else {
+            // Validate date format (YYYY-MM-DD) and not in the future
+            if (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $birthdate) || strtotime($birthdate) > time()) {
+                $errors[] = "Please enter a valid birth date";
+            }
         }
         if (!$privacy) {
             $errors[] = "You must consent to the privacy policy";
@@ -71,14 +76,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'firstname' => $first_name,
                 'surname' => $surname,
                 'middle_initial' => $middle_initial,
-                'client_name' => $first_name . ' ' . $middle_initial . ' ' . $surname, 
+                'client_name' => $first_name . ' ' . $middle_initial . ' ' . $surname,
                 'agency' => $agency,
                 'gender' => $gender,
-                'age' => $age,
+                'birthdate' => $birthdate,
                 'region' => $region,
                 'region_id' => $region,
                 'province_id' => $province_id,
-                'district_id' => $district_id,                'municipality_id' => $municipality_id,                'support_type' => $support_type,
+                'district_id' => $district_id,
+                'municipality_id' => $municipality_id,
+                'support_type' => $support_type,
                 'subject' => $subject,
                 'message' => $message,
                 'status' => 'Pending',
