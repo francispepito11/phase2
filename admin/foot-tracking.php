@@ -236,491 +236,449 @@ $prev_year = $current_semester === 1 ? $current_year - 1 : $current_year;
 $prev_semester_name = $prev_semester === 1 ? "First Semester (January-June) " . $prev_year : "Second Semester (July-December) " . $prev_year;
 $month_name = $semester_name;
 $prev_month_name = $prev_semester_name;
+
+// Set page title for the template
+$page_title = "Foot Traffic Tracking";
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Foot Traffic Tracking - DICT Client Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <title><?php echo $page_title; ?> - DICT Client Management System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
         }
-        .main-content {
-            height: 100vh;
-            overflow-y: auto;
-            max-width: 100%;
+        
+        /* Card Styles */
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
         }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.5rem;
+        }
+        
+        /* Table Styles */
         .table-container {
             overflow-x: auto;
             max-width: 100%;
         }
-        table {
-            border-collapse: collapse;
+        
+        .table {
             width: 100%;
+            border-collapse: collapse;
         }
-        th, td {
-            border: 1px solid #e2e8f0;
-            padding: 8px;
+        
+        .table th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+        
+        .table th, .table td {
+            padding: 0.75rem;
             text-align: center;
+            border: 1px solid #e9ecef;
         }
-        th {
-            background-color: #f8fafc;
-        }
+        
         .region-column {
             position: sticky;
             left: 0;
             background-color: white;
             z-index: 10;
+            text-align: left !important;
         }
+        
         .age-group-header {
-            background-color: #f1f5f9;
+            background-color: #f1f5f9 !important;
         }
-        /* New styles for modern table */
-        .modern-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .modern-table th, .modern-table td {
-            padding: 12px 15px;
-            text-align: left;
-            border: 1px solid #e2e8f0;
-        }
-        .modern-table th {
-            background-color: #f9fafb;
-            font-weight: 500;
-            text-transform: uppercase;
-            font-size: 0.875rem;
-            letter-spacing: 0.05em;
-        }
-        .modern-table td {
-            font-size: 0.875rem;
-            color: #4a5568;
-        }
-        .table-header {
-            margin-bottom: 1.5rem;
-        }
-        .table-header h2 {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #2d3748;
-        }
-        .table-header p {
-            font-size: 0.875rem;
-            color: #718096;
-        }
-        .responsive-table-container {
-            overflow-x: auto;
-        }
-        /* Progress bar styles */
-        .progress-bar-bg {
-            background-color: #edf2f7;
-            border-radius: 4px;
-            height: 8px;
-            width: 100%;
+        
+        /* Chart Container */
+        .chart-container {
+            height: 300px;
             position: relative;
         }
-        .progress-bar-fill {
-            background-color: #38a169;
-            height: 100%;
-            border-radius: 4px;
-        }
-        /* Status badge styles */
-        .status-badge {
-            display: inline-block;
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            font-weight: 500;
-            text-transform: uppercase;
-        }
-        .status-badge-blue {
-            background-color: #ebf8ff;
-            color: #3182ce;
-        }
-        .status-badge-green {
-            background-color: #f0fff4;
-            color: #48bb78;
-        }
     </style>
-</head>
-<body class="bg-gray-100">
-    <?php include 'includes/sidebar.php'; ?>
     
-    <!-- Main Content -->
-    <div class="flex-1 main-content">
-        <!-- Top Navigation -->
-        <div class="bg-white shadow-md">
-            <div class="mx-auto px-4 sm:px-6 lg:px-8">
-                <div class="flex justify-between h-16">
-                    <div class="flex">
-                        <div class="flex-shrink-0 flex items-center">
-                            <h1 class="text-xl font-bold text-gray-800">Foot Traffic Tracking</h1>
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Include Sidebar -->
+    <?php include '../admin/includes/sidebar.php'; ?>
+    
+    <!-- Page Content -->
+    <div class="container-fluid py-4">
+        <!-- Semester Selection -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="card-title mb-1">Foot Traffic Analysis</h5>
+                        <p class="text-muted small">Track usage of ICT equipment and facilities by semester.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <form id="semesterForm" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="get" class="d-flex justify-content-md-end mt-3 mt-md-0">
+                            <select name="semester" id="semester" onchange="document.getElementById('semesterForm').submit();" class="form-select me-2" style="width: auto;">
+                                <option value="1" <?php echo $current_semester === 1 ? 'selected' : ''; ?>>First Semester (Jan-Jun)</option>
+                                <option value="2" <?php echo $current_semester === 2 ? 'selected' : ''; ?>>Second Semester (Jul-Dec)</option>
+                            </select>
+                            <select name="year" id="year" onchange="document.getElementById('semesterForm').submit();" class="form-select" style="width: auto;">
+                                <?php for ($i = intval(date('Y')); $i >= 2020; $i--): ?>
+                                    <option value="<?php echo $i; ?>" <?php echo $i === $current_year ? 'selected' : ''; ?>>
+                                        <?php echo $i; ?>
+                                    </option>
+                                <?php endfor; ?>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="card-icon bg-primary bg-opacity-10 text-primary me-3">
+                            <i class="bi bi-people"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">Total Foot Traffic</h6>
+                            <h2 class="card-title mb-0"><?php echo isset($total_foot_traffic) ? $total_foot_traffic : 0; ?></h2>
+                            <p class="card-text small text-muted">For <?php echo $semester_name; ?></p>
                         </div>
                     </div>
-                    <div class="flex items-center">
-                        <div class="ml-4 flex items-center md:ml-6">
-                            <div class="relative">
-                                <div class="flex items-center">
-                                    <span class="text-gray-700 text-sm mr-2">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                                </div>
-                            </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="card-icon bg-success bg-opacity-10 text-success me-3">
+                            <i class="bi bi-graph-up"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">Monthly Change</h6>
+                            <h2 class="card-title mb-0 <?php echo $percent_change >= 0 ? 'text-success' : 'text-danger'; ?>">
+                                <?php echo $percent_change >= 0 ? '+' : ''; ?><?php echo number_format($percent_change, 1); ?>%
+                            </h2>
+                            <p class="card-text small text-muted">vs <?php echo $prev_semester_name; ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="card-icon bg-info bg-opacity-10 text-info me-3">
+                            <i class="bi bi-calendar-day"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">Daily Average</h6>
+                            <h2 class="card-title mb-0">
+                                <?php 
+                                $days_in_month = date('t', mktime(0, 0, 0, $current_semester == 1 ? 1 : 7, 1, $current_year));
+                                echo isset($total_foot_traffic) ? number_format($total_foot_traffic / $days_in_month, 1) : 0; 
+                                ?>
+                            </h2>
+                            <p class="card-text small text-muted">Visitors per day</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Content Area -->
-        <main class="py-6">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <!-- Month Selection -->
-                <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                    <div class="flex flex-col md:flex-row md:justify-between md:items-center">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">Foot Traffic Analysis</h2>
-                            <p class="mt-1 text-sm text-gray-500">Track usage of ICT equipment and facilities by month.</p>
-                        </div>
-                        <div class="mt-4 md:mt-0">
-                            <!-- Replace the month selection form with semester selection -->
-                            <form id="semesterForm" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="get" class="flex items-center space-x-2">
-                                <select name="semester" id="semester" onchange="document.getElementById('semesterForm').submit();" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                    <option value="1" <?php echo $current_semester === 1 ? 'selected' : ''; ?>>First Semester (Jan-Jun)</option>
-                                    <option value="2" <?php echo $current_semester === 2 ? 'selected' : ''; ?>>Second Semester (Jul-Dec)</option>
-                                </select>
-                                <select name="year" id="year" onchange="document.getElementById('semesterForm').submit();" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50">
-                                    <?php for ($i = intval(date('Y')); $i >= 2020; $i--): ?>
-                                        <option value="<?php echo $i; ?>" <?php echo $i === $current_year ? 'selected' : ''; ?>>
-                                            <?php echo $i; ?>
-                                        </option>
-                                    <?php endfor; ?>
-                                </select>
-                            </form>
-                        </div>
+        <!-- Charts -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Service Type Distribution</h5>
                     </div>
-                </div>
-
-                <!-- Summary Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Total Foot Traffic</h3>
-                                <p class="text-3xl font-bold text-gray-700"><?php echo isset($total_foot_traffic) ? $total_foot_traffic : 0; ?></p>
-                                <p class="text-sm text-gray-500">For <?php echo $semester_name; ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-green-100 text-green-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Monthly Change</h3>
-                                <p class="text-3xl font-bold <?php echo $percent_change >= 0 ? 'text-green-600' : 'text-red-600'; ?>">
-                                    <?php echo $percent_change >= 0 ? '+' : ''; ?><?php echo number_format($percent_change, 1); ?>%
-                                </p>
-                                <p class="text-sm text-gray-500">vs <?php echo $prev_semester_name; ?></p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Daily Average</h3>
-                                <p class="text-3xl font-bold text-gray-700">
-                                    <?php 
-                                    $days_in_month = date('t', mktime(0, 0, 0, $current_semester == 1 ? 1 : 7, 1, $current_year));
-                                    echo isset($total_foot_traffic) ? number_format($total_foot_traffic / $days_in_month, 1) : 0; 
-                                    ?>
-                                </p>
-                                <p class="text-sm text-gray-500">Visitors per day</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Charts -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Service Type Distribution</h3>
-                        <div class="h-80">
+                    <div class="card-body">
+                        <div class="chart-container">
                             <canvas id="serviceTypeChart"></canvas>
                         </div>
                     </div>
-                    
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-medium text-gray-900 mb-4">Daily Foot Traffic</h3>
-                        <div class="h-80">
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Daily Foot Traffic</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
                             <canvas id="dailyTrafficChart"></canvas>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
-                <!-- Detailed Table -->
-               
-
-                <!-- Age Group and Gender Table - New Format -->
-                <div class="bg-white rounded-lg shadow-md mt-6">
-                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Foot Traffic by Age Group and Gender per Region for <?php echo $semester_name; ?>
-                        </h3>
-                        <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                            Breakdown of visitors by age group (Youth, Adults, Seniors) and gender.
-                        </p>
-                    </div>
-                    
-                    <div class="table-container">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead>
+        <!-- Detailed Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Foot Traffic Breakdown for <?php echo $semester_name; ?></h5>
+                <p class="card-text small text-muted mt-1">Detailed breakdown of facility and equipment usage.</p>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Service Type</th>
+                                <th>Count</th>
+                                <th>Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($foot_traffic_data)): ?>
+                            <tr>
+                                <td colspan="3" class="text-center">No data available for this semester.</td>
+                            </tr>
+                            <?php else: ?>
+                                <?php foreach ($foot_traffic_data as $item): ?>
                                 <tr>
-                                    <th rowspan="2" class="region-column px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
-                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Youth(&lt;18)</th>
-                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Adults(18-59)</th>
-                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seniors(≥60)</th>
+                                    <td><?php echo htmlspecialchars($item['support_type']); ?></td>
+                                    <td><?php echo $item['count']; ?></td>
+                                    <td><?php echo number_format(($item['count'] / $total_foot_traffic) * 100, 1); ?>%</td>
                                 </tr>
-                                <tr>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($age_gender_data)): ?>
-                                <tr>
-                                    <td colspan="7" class="px-4 py-2 text-center text-sm text-gray-500">
-                                        No data available for this semester.
-                                    </td>
-                                </tr>
-                                <?php else: ?>
-                                    <?php foreach ($age_gender_data as $item): ?>
-                                    <tr>
-                                        <td class="region-column px-4 py-2 text-sm font-medium text-gray-900">
-                                            <?php echo htmlspecialchars($item['region_name']); ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['youth_male']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['youth_female']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['adult_male']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['adult_female']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['senior_male']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['senior_female']; ?>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
+            </div>
+        </div>
 
-                <!-- Monthly Age Group and Gender Table -->
-                <div class="bg-white rounded-lg shadow-md mt-6">
-                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Monthly Foot Traffic by Age Group and Gender per Region for <?php echo $semester_name; ?>
-                        </h3>
-                        <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                            Breakdown of visitors by month, age group, and gender.
-                        </p>
-                    </div>
-                    
-                    <div class="table-container overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead>
+        <!-- Age Group and Gender Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Foot Traffic by Age Group and Gender per Region for <?php echo $semester_name; ?></h5>
+                <p class="card-text small text-muted mt-1">Breakdown of visitors by age group (Youth, Adults, Seniors) and gender.</p>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="region-column">Region</th>
+                                <th colspan="2" class="age-group-header">Youth(&lt;18)</th>
+                                <th colspan="2" class="age-group-header">Adults(18-59)</th>
+                                <th colspan="2" class="age-group-header">Seniors(≥60)</th>
+                            </tr>
+                            <tr>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($age_gender_data)): ?>
+                            <tr>
+                                <td colspan="7" class="text-center">No data available for this semester.</td>
+                            </tr>
+                            <?php else: ?>
+                                <?php foreach ($age_gender_data as $item): ?>
                                 <tr>
-                                    <th rowspan="3" class="region-column px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky left-0 bg-gray-50">Region</th>
-                                    <th colspan="6" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Age Group</th>
-                                    <?php 
-                                    $semester_months = $current_semester == 1 
-                                        ? ['January', 'February', 'March', 'April', 'May', 'June'] 
-                                        : ['July', 'August', 'September', 'October', 'November', 'December'];
+                                    <td class="region-column"><?php echo htmlspecialchars($item['region_name']); ?></td>
+                                    <td><?php echo $item['youth_male']; ?></td>
+                                    <td><?php echo $item['youth_female']; ?></td>
+                                    <td><?php echo $item['adult_male']; ?></td>
+                                    <td><?php echo $item['adult_female']; ?></td>
+                                    <td><?php echo $item['senior_male']; ?></td>
+                                    <td><?php echo $item['senior_female']; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Age Group and Gender Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Monthly Foot Traffic by Age Group and Gender per Region for <?php echo $semester_name; ?></h5>
+                <p class="card-text small text-muted mt-1">Breakdown of visitors by month, age group, and gender.</p>
+            </div>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th rowspan="3" class="region-column">Region</th>
+                                <th colspan="6" class="age-group-header">Age Group</th>
+                                <?php 
+                                $semester_months = $current_semester == 1 
+                                    ? ['January', 'February', 'March', 'April', 'May', 'June'] 
+                                    : ['July', 'August', 'September', 'October', 'November', 'December'];
+                                
+                                foreach ($semester_months as $month) {
+                                    echo '<th colspan="2">' . $month . '</th>';
+                                }
+                                ?>
+                            </tr>
+                            <tr>
+                                <th colspan="2" class="age-group-header">Youth(&lt;18)</th>
+                                <th colspan="2" class="age-group-header">Adults(18-59)</th>
+                                <th colspan="2" class="age-group-header">Seniors(≥60)</th>
+                                <?php 
+                                foreach ($semester_months as $month) {
+                                    echo '<th>Male</th>';
+                                    echo '<th>Female</th>';
+                                }
+                                ?>
+                            </tr>
+                            <tr>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <?php 
+                                foreach ($semester_months as $month) {
+                                    echo '<th>Male</th>';
+                                    echo '<th>Female</th>';
+                                }
+                                ?>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($age_gender_data)): ?>
+                            <tr>
+                                <td colspan="<?php echo 7 + (count($semester_months) * 2); ?>" class="text-center">No data available for this semester.</td>
+                            </tr>
+                            <?php else: ?>
+                                <?php foreach ($age_gender_data as $item): ?>
+                                <tr>
+                                    <td class="region-column"><?php echo htmlspecialchars($item['region_name']); ?></td>
+                                    <td><?php echo $item['youth_male']; ?></td>
+                                    <td><?php echo $item['youth_female']; ?></td>
+                                    <td><?php echo $item['adult_male']; ?></td>
+                                    <td><?php echo $item['adult_female']; ?></td>
+                                    <td><?php echo $item['senior_male']; ?></td>
+                                    <td><?php echo $item['senior_female']; ?></td>
                                     
-                                    foreach ($semester_months as $month) {
-                                        echo '<th colspan="2" class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">' . $month . '</th>';
-                                    }
-                                    ?>
-                                </tr>
-                                <tr>
-                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Youth(&lt;18)</th>
-                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Adults(18-59)</th>
-                                    <th colspan="2" class="age-group-header px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Seniors(≥60)</th>
-                                    <?php 
-                                    foreach ($semester_months as $month) {
-                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>';
-                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>';
-                                    }
-                                    ?>
-                                </tr>
-                                <tr>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <?php 
-                                    foreach ($semester_months as $month) {
-                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>';
-                                        echo '<th class="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>';
-                                    }
-                                    ?>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($age_gender_data)): ?>
-                                <tr>
-                                    <td colspan="<?php echo 7 + (count($semester_months) * 2); ?>" class="px-4 py-2 text-center text-sm text-gray-500">
-                                        No data available for this semester.
-                                    </td>
-                                </tr>
-                                <?php else: ?>
-                                    <?php foreach ($age_gender_data as $item): ?>
-                                    <tr>
-                                        <td class="region-column px-4 py-2 text-sm font-medium text-gray-900 sticky left-0 bg-white">
-                                            <?php echo htmlspecialchars($item['region_name']); ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['youth_male']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['youth_female']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['adult_male']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['adult_female']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['senior_male']; ?>
-                                        </td>
-                                        <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                            <?php echo $item['senior_female']; ?>
-                                        </td>
+                                    <?php foreach ($semester_months as $month): ?>
+                                        <?php 
+                                        $month_data = isset($monthly_age_gender_data[$month][$item['region_name']]) 
+                                            ? $monthly_age_gender_data[$month][$item['region_name']] 
+                                            : ['youth_male' => 0, 'youth_female' => 0, 'adult_male' => 0, 'adult_female' => 0, 'senior_male' => 0, 'senior_female' => 0];
                                         
-                                        <?php foreach ($semester_months as $month): ?>
-                                            <?php 
-                                            $month_data = isset($monthly_age_gender_data[$month][$item['region_name']]) 
-                                                ? $monthly_age_gender_data[$month][$item['region_name']] 
-                                                : ['youth_male' => 0, 'youth_female' => 0, 'adult_male' => 0, 'adult_female' => 0, 'senior_male' => 0, 'senior_female' => 0];
-                                            
-                                            $male_total = $month_data['youth_male'] + $month_data['adult_male'] + $month_data['senior_male'];
-                                            $female_total = $month_data['youth_female'] + $month_data['adult_female'] + $month_data['senior_female'];
-                                            ?>
-                                            <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                                <?php echo $male_total; ?>
-                                            </td>
-                                            <td class="px-4 py-2 text-center text-sm text-gray-500">
-                                                <?php echo $female_total; ?>
-                                            </td>
-                                        <?php endforeach; ?>
-                                    </tr>
+                                        $male_total = $month_data['youth_male'] + $month_data['adult_male'] + $month_data['senior_male'];
+                                        $female_total = $month_data['youth_female'] + $month_data['adult_female'] + $month_data['senior_female'];
+                                        ?>
+                                        <td><?php echo $male_total; ?></td>
+                                        <td><?php echo $female_total; ?></td>
                                     <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Monthly Gender Count by Region Table -->
-                <div class="bg-white rounded-lg shadow-md mt-6">
-                    <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900">
-                            Client Count by Gender per Region for <?php echo $semester_name; ?>
-                        </h3>
-                        <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                            Breakdown of male and female clients using DICT support services by region.
-                        </p>
-                    </div>
-                    
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Male</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Female</th>
-                                    <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
                                 </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <?php if (empty($monthly_gender_data)): ?>
-                                <tr>
-                                    <td colspan="4" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                        No data available for this semester.
-                                    </td>
-                                </tr>
-                                <?php else: ?>
-                                    <?php foreach ($monthly_gender_data as $item): ?>
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            <?php echo htmlspecialchars($item['region_name']); ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                            <?php echo $item['male_count']; ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                            <?php echo $item['female_count']; ?>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500 font-medium">
-                                            <?php echo $item['male_count'] + $item['female_count']; ?>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </main>
+        </div>
 
-        <!-- Footer -->
-        <footer class="bg-white border-t border-gray-200 py-4">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <p class="text-center text-sm text-gray-500">© 2025 DICT Client Management System. All rights reserved.</p>
+        <!-- Monthly Gender Count by Region Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Client Count by Gender per Region for <?php echo $semester_name; ?></h5>
+                <p class="card-text small text-muted mt-1">Breakdown of male and female clients using DICT support services by region.</p>
             </div>
-        </footer>
+            <div class="card-body">
+                <div class="table-container">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>Region</th>
+                                <th>Male</th>
+                                <th>Female</th>
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (empty($monthly_gender_data)): ?>
+                            <tr>
+                                <td colspan="4" class="text-center">No data available for this semester.</td>
+                            </tr>
+                            <?php else: ?>
+                                <?php foreach ($monthly_gender_data as $item): ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($item['region_name']); ?></td>
+                                    <td><?php echo $item['male_count']; ?></td>
+                                    <td><?php echo $item['female_count']; ?></td>
+                                    <td><strong><?php echo $item['male_count'] + $item['female_count']; ?></strong></td>
+                                </tr>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- JavaScript for Charts -->
+    <!-- Footer -->
+    <footer class="bg-white py-4 mt-auto border-top">
+        <div class="container-fluid">
+            <div class="text-center small">
+                <div class="text-muted">© 2025 DICT Client Management System. All rights reserved.</div>
+            </div>
+        </div>
+    </footer>
+    
+    
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Charts
             // Service Types Chart
             const serviceTypeCtx = document.getElementById('serviceTypeChart').getContext('2d');
             const serviceTypeChart = new Chart(serviceTypeCtx, {
@@ -730,7 +688,12 @@ $prev_month_name = $prev_semester_name;
                     datasets: [{
                         data: <?php echo json_encode(array_column($foot_traffic_data, 'count')); ?>,
                         backgroundColor: [
-                            '#10B981', '#F59E0B', '#4F46E5', '#EF4444'
+                            'rgba(54, 162, 235, 0.7)',
+                            'rgba(255, 99, 132, 0.7)',
+                            'rgba(75, 192, 192, 0.7)',
+                            'rgba(255, 206, 86, 0.7)',
+                            'rgba(153, 102, 255, 0.7)',
+                            'rgba(255, 159, 64, 0.7)'
                         ],
                         borderWidth: 1
                     }]
@@ -757,8 +720,8 @@ $prev_month_name = $prev_semester_name;
                     datasets: [{
                         label: 'Daily Foot Traffic',
                         data: <?php echo json_encode(array_column($daily_foot_traffic, 'count')); ?>,
-                        backgroundColor: 'rgba(16, 185, 129, 0.6)',
-                        borderColor: 'rgba(16, 185, 129, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
                         borderWidth: 1
                     }]
                 },

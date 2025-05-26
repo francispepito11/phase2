@@ -12,12 +12,15 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 require_once '../includes/db_connect.php';
 require_once '../includes/crud_operations.php';
 
+// Set page title
+$page_title = "Service Requests";
+
 // Initialize variables
 $search_term = isset($_GET['search']) ? sanitize_input($_GET['search']) : '';
 $current_page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
 $status_filter = isset($_GET['status']) ? sanitize_input($_GET['status']) : '';
 $records_per_page = 10;
-$offset = ($current_page - 1) * $records_per_page;
+$offset = ((int)$current_page - 1) * (int)$records_per_page;
 
 // Get service requests from database
 // First, prepare the WHERE conditions
@@ -48,261 +51,314 @@ try {
 }
 
 // Calculate pagination
-$total_pages = ceil($total_records / $records_per_page);
+$total_pages = ceil((int)$total_records / (int)$records_per_page);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Service Requests - DICT Client Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title><?php echo $page_title; ?> - DICT Client Management System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
         }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.5rem;
+        }
+        
         .table-container {
             overflow-x: auto;
             max-width: 100%;
         }
+        
         /* Make table cells more compact */
         .compact-table th, .compact-table td {
             padding: 0.5rem 0.75rem;
             font-size: 0.8125rem;
         }
-        /* Fix main content to prevent overlap */
-        .main-content {
-            height: 100vh;
-            overflow-y: auto;
-            max-width: 100%;
-        }
     </style>
 </head>
-<body class="bg-gray-100">
-    <?php include '../admin/includes/sidebar.php'; ?>
-        <!-- Main Content -->
-        <div class="flex-1 main-content">
-            <!-- Top Navigation -->
-            <div class="bg-white shadow-md">
-                <div class="mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex">
-                            <div class="flex-shrink-0 flex items-center">
-                                <h1 class="text-xl font-bold text-gray-800">Service Requests</h1>
-                            </div>
-                        </div>
-                        <div class="flex items-center">
-                            <div class="ml-4 flex items-center md:ml-6">
-                                <div class="relative">
-                                    <div class="flex items-center">
-                                        <span class="text-gray-700 text-sm mr-2">Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+<body>
+    <!-- Include Sidebar -->
+    <?php include 'includes/sidebar.php'; ?>
+    
+    <!-- Page Content -->
+    <div class="container-fluid py-4">
+        <!-- Content Header -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="card-title h4 mb-1">Service Requests Management</h2>
+                        <p class="text-muted small mb-0">View and manage technical support requests from clients.</p>
+                    </div>
+                    <div>
+                        <a href="../tech-support.php" target="_blank" class="btn btn-success btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i> New Request
+                        </a>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- Content Area -->
-            <main class="py-6">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <!-- Content Header -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div class="flex flex-col md:flex-row md:justify-between md:items-center">
-                            <div>
-                                <h2 class="text-2xl font-bold text-gray-800">Service Requests Management</h2>
-                                <p class="mt-1 text-sm text-gray-500">View and manage technical support requests from clients.</p>
-                            </div>
-                            <div class="mt-4 md:mt-0">
-                                <a href="../tech-support.php" target="_blank" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-                                    </svg>
-                                    New Request
-                                </a>
-                            </div>
-                        </div>
+        <!-- Search and Filter Section -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="search" class="form-label">Search</label>
+                        <input type="text" name="search" id="search" class="form-control" placeholder="Client, Agency, Email..." value="<?php echo htmlspecialchars($search_term); ?>">
                     </div>
 
-                    <!-- Search and Filter Section -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="get" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label for="search" class="block text-sm font-medium text-gray-700">Search</label>
-                                <div class="mt-1 relative rounded-md shadow-sm">
-                                    <input type="text" name="search" id="search" class="focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md" placeholder="Client, Agency, Email..." value="<?php echo htmlspecialchars($search_term); ?>">
-                                </div>
-                            </div>
+                    <div class="col-md-4">
+                        <label for="status" class="form-label">Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
+                            <option value="In Progress" <?php echo $status_filter === 'In Progress' ? 'selected' : ''; ?>>In Progress</option>
+                            <option value="Resolved" <?php echo $status_filter === 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
+                            <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                        </select>
+                    </div>
 
-                            <div>
-                                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                                <select id="status" name="status" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md">
-                                    <option value="">All Statuses</option>
-                                    <option value="Pending" <?php echo $status_filter === 'Pending' ? 'selected' : ''; ?>>Pending</option>
-                                    <option value="In Progress" <?php echo $status_filter === 'In Progress' ? 'selected' : ''; ?>>In Progress</option>
-                                    <option value="Resolved" <?php echo $status_filter === 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
-                                    <option value="Cancelled" <?php echo $status_filter === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                </select>
-                            </div>
-
-                            <div class="flex items-end">
-                                <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                                    </svg>
-                                    Filter
-                                </button>
-                                <?php if (!empty($search_term) || !empty($status_filter)): ?>
-                                <a href="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="ml-3 inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                    Clear
-                                </a>
-                                <?php endif; ?>
-                            </div>
-                        </form>
-                    </div>                    <!-- Results Table -->
-                    <div class="bg-white rounded-lg shadow-md">
-                        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                Service Requests
-                            </h3>
-                            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                                Showing <?php echo min($total_records, 1 + (($current_page - 1) * $records_per_page)); ?> to <?php echo min($total_records, $current_page * $records_per_page); ?> of <?php echo $total_records; ?> entries
-                            </p>                        </div>
-                        
-                        <div class="table-container">
-                            <table class="min-w-full divide-y divide-gray-200 compact-table">
-                                <thead class="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">#</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Age</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Agency</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Region</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Support Type</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                        <th scope="col" class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php if (empty($serviceRequests)): ?>
-                                    <tr>
-                                        <td colspan="10" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                            No service requests found.
-                                        </td>
-                                    </tr>
-                                    <?php else: ?>
-                                        <?php 
-                                        $count = ($current_page - 1) * $records_per_page + 1;
-                                        foreach ($serviceRequests as $request): 
-                                            // Get region name
-                                            $region_name = "";
-                                            if (!empty($request['region_id'])) {
-                                                $region = get_record_by_id('regions', $request['region_id']);
-                                                if ($region) {
-                                                    $region_name = $region['region_name'];
-                                                }
-                                            }
-                                        ?>
-                                        <tr>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo $count++; ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($request['client_name']); ?></div>
-                                                <!-- <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['email']); ?></div> -->
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['gender']); ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['age']); ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['agency']); ?></div>
-                                                <!-- <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['phone']); ?></div> -->
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($region_name); ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500"><?php echo htmlspecialchars($request['support_type']); ?></td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <?php echo date('M d, Y', strtotime($request['date_requested'])); ?>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap">
-                                                <?php if ($request['status'] === 'Resolved'): ?>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                        Resolved
-                                                    </span>
-                                                <?php elseif ($request['status'] === 'In Progress'): ?>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                        In Progress
-                                                    </span>
-                                                <?php elseif ($request['status'] === 'Cancelled'): ?>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                                                        Cancelled
-                                                    </span>
-                                                <?php else: ?>
-                                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                        Pending
-                                                    </span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <a href="view-request.php?id=<?php echo $request['id']; ?>" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                                <a href="edit-request.php?id=<?php echo $request['id']; ?>" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                        <!-- Pagination -->
-                        <?php if ($total_pages > 1): ?>
-                        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                <div>
-                                    <p class="text-sm text-gray-700">
-                                        Showing <span class="font-medium"><?php echo min($total_records, 1 + (($current_page - 1) * $records_per_page)); ?></span> to <span class="font-medium"><?php echo min($total_records, $current_page * $records_per_page); ?></span> of <span class="font-medium"><?php echo $total_records; ?></span> results
-                                    </p>
-                                </div>
-                                <div>
-                                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                                        <?php if ($current_page > 1): ?>
-                                        <a href="?page=<?php echo $current_page - 1; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                            <span class="sr-only">Previous</span>
-                                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                            </svg>
-                                        </a>
-                                        <?php endif; ?>
-                                        
-                                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
-                                        <a href="?page=<?php echo $i; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium <?php echo $i === $current_page ? 'text-blue-600 bg-blue-50' : 'text-gray-700 hover:bg-gray-50'; ?>">
-                                            <?php echo $i; ?>
-                                        </a>
-                                        <?php endfor; ?>
-                                        
-                                        <?php if ($current_page < $total_pages): ?>
-                                        <a href="?page=<?php echo $current_page + 1; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
-                                            <span class="sr-only">Next</span>
-                                            <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
-                                            </svg>
-                                        </a>
-                                        <?php endif; ?>
-                                    </nav>
-                                </div>
-                            </div>
-                        </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-search me-1"></i> Filter
+                        </button>
+                        <?php if (!empty($search_term) || !empty($status_filter)): ?>
+                        <a href="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" class="btn btn-outline-secondary">
+                            Clear
+                        </a>
                         <?php endif; ?>
                     </div>
-                </div>
-            </main>
+                </form>
+            </div>
+        </div>
 
-            <!-- Footer -->
-            <footer class="bg-white border-t border-gray-200 py-4">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <p class="text-center text-sm text-gray-500">© 2025 DICT Client Management System. All rights reserved.</p>
-                </div>
-            </footer>
+        <!-- Results Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Service Requests</h5>
+                <span class="text-muted small">
+                    Showing <?php echo min((int)$total_records, 1 + ((int)$current_page - 1) * (int)$records_per_page); ?> to <?php echo min((int)$total_records, (int)$current_page * (int)$records_per_page); ?> of <?php echo (int)$total_records; ?> entries
+                </span>
+            </div>
+            
+            <div class="table-container">
+                <table class="table table-hover table-striped compact-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Client</th>
+                            <th scope="col">Gender</th>
+                            <th scope="col">Age</th>
+                            <th scope="col">Agency</th>
+                            <th scope="col">Region</th>
+                            <th scope="col">Support Type</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($serviceRequests)): ?>
+                        <tr>
+                            <td colspan="10" class="text-center py-4 text-muted">
+                                No service requests found.
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                            <?php 
+                            // Fix the count calculation to ensure it's always positive
+                            $count = max(1, ((int)$current_page - 1) * (int)$records_per_page + 1);
+                            foreach ($serviceRequests as $request): 
+                                // Get region name
+                                $region_name = "";
+                                if (!empty($request['region_id'])) {
+                                    $region = get_record_by_id('regions', $request['region_id']);
+                                    if ($region) {
+                                        $region_name = $region['region_name'];
+                                    }
+                                }
+                            ?>
+                            <tr>
+                                <td><?php echo $count++; ?></td>
+                                <td>
+                                    <div class="fw-medium"><?php echo htmlspecialchars($request['client_name']); ?></div>
+                                </td>
+                                <td><?php echo htmlspecialchars($request['gender']); ?></td>
+                                <td><?php echo !empty($request['age']) ? (int)$request['age'] : ''; ?></td>
+                                <td>
+                                    <div><?php echo htmlspecialchars($request['agency']); ?></div>
+                                </td>
+                                <td><?php echo htmlspecialchars($region_name); ?></td>
+                                <td><?php echo htmlspecialchars($request['support_type']); ?></td>
+                                <td>
+                                    <?php echo date('M d, Y', strtotime($request['date_requested'])); ?>
+                                </td>
+                                <td>
+                                    <?php if ($request['status'] === 'Resolved'): ?>
+                                        <span class="badge bg-success">Resolved</span>
+                                    <?php elseif ($request['status'] === 'In Progress'): ?>
+                                        <span class="badge bg-primary">In Progress</span>
+                                    <?php elseif ($request['status'] === 'Cancelled'): ?>
+                                        <span class="badge bg-danger">Cancelled</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td>
+                                    <a href="view-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-primary me-1">View</a>
+                                    <a href="edit-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                </td>
+                            </tr>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <?php if ($total_pages > 1): ?>
+            <div class="card-footer">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mb-0">
+                        <?php if ($current_page > 1): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?php echo $current_page - 1; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" aria-label="Previous">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                        
+                        <?php for ($i = 1; $i <= $total_pages; $i++): ?>
+                        <li class="page-item <?php echo $i === $current_page ? 'active' : ''; ?>">
+                            <a class="page-link" href="?page=<?php echo $i; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>">
+                                <?php echo $i; ?>
+                            </a>
+                        </li>
+                        <?php endfor; ?>
+                        
+                        <?php if ($current_page < $total_pages): ?>
+                        <li class="page-item">
+                            <a class="page-link" href="?page=<?php echo $current_page + 1; ?><?php echo !empty($search_term) ? '&search=' . urlencode($search_term) : ''; ?><?php echo !empty($status_filter) ? '&status=' . urlencode($status_filter) : ''; ?>" aria-label="Next">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <?php endif; ?>
+                    </ul>
+                </nav>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-white py-4 mt-auto border-top">
+        <div class="container-fluid">
+            <div class="text-center small">
+                <div class="text-muted">© 2025 DICT Client Management System. All rights reserved.</div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Include Page Wrapper End -->
+   
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript for Sidebar Dropdown -->
+    <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap JS
+    if (typeof bootstrap !== 'undefined') {
+        // Initialize all dropdowns
+        var dropdownElementList = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        if (dropdownElementList.length > 0) {
+            dropdownElementList.forEach(function(element) {
+                new bootstrap.Dropdown(element);
+            });
+        }
+        
+        // Initialize Tech Supports dropdown in sidebar
+        var techSupportsToggle = document.querySelector('[data-bs-target="#techSupportsSubmenu"]');
+        if (techSupportsToggle) {
+            var techSupportsSubmenu = document.querySelector('#techSupportsSubmenu');
+            if (techSupportsSubmenu) {
+                // Create collapse instance if it doesn't exist
+                var bsCollapse;
+                try {
+                    bsCollapse = bootstrap.Collapse.getInstance(techSupportsSubmenu);
+                    if (!bsCollapse) {
+                        bsCollapse = new bootstrap.Collapse(techSupportsSubmenu, {
+                            toggle: false
+                        });
+                    }
+                } catch (e) {
+                    bsCollapse = new bootstrap.Collapse(techSupportsSubmenu, {
+                        toggle: false
+                    });
+                }
+                
+                // Check if the current page is under Tech Supports
+                var currentPage = '<?php echo basename($_SERVER["PHP_SELF"]); ?>';
+                var techSupportPages = ['service-requests.php', 'support-summary.php', 'foot-tracking.php', 'view-request.php', 'edit-request.php'];
+                
+                if (techSupportPages.includes(currentPage)) {
+                    // Show the submenu
+                    techSupportsSubmenu.classList.add('show');
+                }
+                
+                // Add click event listener
+                techSupportsToggle.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (techSupportsSubmenu.classList.contains('show')) {
+                        techSupportsSubmenu.classList.remove('show');
+                    } else {
+                        techSupportsSubmenu.classList.add('show');
+                    }
+                });
+            }
+        }
+    } else {
+        console.error('Bootstrap JS not loaded');
+    }
+});
+</script>
 </body>
 </html>

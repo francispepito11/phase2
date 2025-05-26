@@ -8,6 +8,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     exit;
 }
 
+// Set page title
+$page_title = "Support Summary";
+
 // Include database connection and CRUD operations
 require_once '../includes/db_connect.php';
 require_once '../includes/crud_operations.php';
@@ -439,532 +442,527 @@ try {
     $error_message = "Error fetching services by province: " . $e->getMessage();
     debug_to_console($error_message);
 }
-
-// Direct database query to get raw data for debugging
-try {
-    $raw_sql = "SELECT * FROM tech_support_requests 
-                WHERE date_requested BETWEEN '$start_date' AND '$end_date'
-                ORDER BY date_requested DESC";
-    $raw_result = $conn->query($raw_sql);
-    $raw_data = [];
-    
-    if ($raw_result) {
-        while ($row = $raw_result->fetch_assoc()) {
-            $raw_data[] = $row;
-        }
-    }
-    
-    debug_to_console("Raw data from database:");
-    debug_to_console($raw_data);
-} catch (Exception $e) {
-    debug_to_console("Error fetching raw data: " . $e->getMessage());
-}
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Support Summary - DICT Client Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title><?php echo $page_title; ?> - DICT Client Management System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    
+    <!-- Custom CSS -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
         }
-        .main-content {
-            height: 100vh;
-            overflow-y: auto;
-            max-width: 100%;
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
         }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.5rem;
+        }
+        
         .table-container {
             overflow-x: auto;
             max-width: 100%;
         }
+        
         .sticky-header th {
             position: sticky;
             top: 0;
             z-index: 10;
+            background-color: #f8f9fa;
+        }
+        
+        .chart-container {
+            height: 300px;
+            position: relative;
         }
     </style>
 </head>
-<body class="bg-gray-100">
-    <div class="flex h-screen bg-gray-100">
-        <?php include 'includes/sidebar.php'; ?>
-        
-        <!-- Main Content -->
-        <div class="flex-1 main-content">
-            <!-- Top Navigation -->
-            <div class="bg-white shadow-md">
-                <div class="mx-auto px-4 sm:px-6 lg:px-8">
-                    <div class="flex justify-between h-16">
-                        <div class="flex">
-                            <div class="flex-shrink-0 flex items-center">
-                                <h1 class="text-xl font-bold text-gray-800">Support Summary</h1>
+<body>
+    <!-- Include Sidebar -->
+    <?php include 'includes/sidebar.php'; ?>
+    
+    <!-- Page Content -->
+    <div class="container-fluid py-4">
+        <!-- Period and Province Selection -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h2 class="card-title h4 mb-1">Support Requests Summary</h2>
+                        <p class="text-muted small mb-0">View statistics for technical support requests by period and province.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <form id="filterForm" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="get" class="row g-3">
+                            <div class="col-md-3">
+                                <label for="view_type" class="form-label">View Type</label>
+                                <select name="view_type" id="view_type" class="form-select">
+                                    <option value="monthly" <?php echo $view_type === 'monthly' ? 'selected' : ''; ?>>Monthly</option>
+                                    <option value="semester" <?php echo $view_type === 'semester' ? 'selected' : ''; ?>>Semester</option>
+                                    <option value="yearly" <?php echo $view_type === 'yearly' ? 'selected' : ''; ?>>Yearly</option>
+                                </select>
                             </div>
+                            
+                            <div class="col-md-3">
+                                <label for="month" class="form-label">Month</label>
+                                <select name="month" id="month" class="form-select" <?php echo $view_type !== 'monthly' ? 'disabled' : ''; ?>>
+                                    <?php for ($i = 1; $i <= 12; $i++): ?>
+                                        <option value="<?php echo $i; ?>" <?php echo $i === $current_month ? 'selected' : ''; ?>>
+                                            <?php echo date('F', mktime(0, 0, 0, $i, 1)); ?>
+                                        </option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="year" class="form-label">Year</label>
+                                <select name="year" id="year" class="form-select">
+                                    <?php for ($i = intval(date('Y')); $i >= 2020; $i--): ?>
+                                        <option value="<?php echo $i; ?>" <?php echo $i === $current_year ? 'selected' : ''; ?>>
+                                            <?php echo $i; ?>
+                                        </option>
+                                    <?php endfor; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="province" class="form-label">Province</label>
+                                <select name="province" id="province" class="form-select">
+                                    <option value="all">All Provinces</option>
+                                    <?php foreach ($provinces as $province): ?>
+                                        <option value="<?php echo $province['id']; ?>" <?php echo $selected_province == $province['id'] ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($province['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            
+                            <div class="col-12 text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-filter me-1"></i> View
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row">
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="card-icon bg-primary bg-opacity-10 text-primary me-3">
+                            <i class="bi bi-file-earmark-text"></i>
                         </div>
-                        <div class="flex items-center">
-                            <div class="ml-4 flex items-center md:ml-6">
-                                <div class="relative">
-                                    <div class="flex items-center">
-                                        <span class="text-gray-700 text-sm mr-2">Welcome, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">Total Requests</h6>
+                            <h2 class="card-title mb-0"><?php echo isset($total_requests) ? $total_requests : 0; ?></h2>
+                            <p class="card-text small text-muted">For <?php echo $period_label; ?></p>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Content Area -->
-            <main class="py-6">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <!-- Period and Province Selection -->
-                    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
-                        <div class="flex flex-col md:flex-row md:justify-between md:items-center">
-                            <div>
-                                <h2 class="text-2xl font-bold text-gray-800">Support Requests Summary</h2>
-                                <p class="mt-1 text-sm text-gray-500">View statistics for technical support requests by period and province.</p>
-                            </div>
-                            <div class="mt-4 md:mt-0">
-                                <form id="filterForm" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="get" class="grid grid-cols-1 sm:grid-cols-2 md:flex md:items-center gap-2">
-                                    <div>
-                                        <label for="view_type" class="block text-sm font-medium text-gray-700 mb-1">View Type</label>
-                                        <select name="view_type" id="view_type" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-full">
-                                            <option value="monthly" <?php echo $view_type === 'monthly' ? 'selected' : ''; ?>>Monthly</option>
-                                            <option value="semester" <?php echo $view_type === 'semester' ? 'selected' : ''; ?>>Semester</option>
-                                            <option value="yearly" <?php echo $view_type === 'yearly' ? 'selected' : ''; ?>>Yearly</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="month" class="block text-sm font-medium text-gray-700 mb-1">Month</label>
-                                        <select name="month" id="month" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-full" <?php echo $view_type !== 'monthly' ? 'disabled' : ''; ?>>
-                                            <?php for ($i = 1; $i <= 12; $i++): ?>
-                                                <option value="<?php echo $i; ?>" <?php echo $i === $current_month ? 'selected' : ''; ?>>
-                                                    <?php echo date('F', mktime(0, 0, 0, $i, 1)); ?>
-                                                </option>
-                                            <?php endfor; ?>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="year" class="block text-sm font-medium text-gray-700 mb-1">Year</label>
-                                        <select name="year" id="year" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-full">
-                                            <?php for ($i = intval(date('Y')); $i >= 2020; $i--): ?>
-                                                <option value="<?php echo $i; ?>" <?php echo $i === $current_year ? 'selected' : ''; ?>>
-                                                    <?php echo $i; ?>
-                                                </option>
-                                            <?php endfor; ?>
-                                        </select>
-                                    </div>
-                                    
-                                    <div>
-                                        <label for="province" class="block text-sm font-medium text-gray-700 mb-1">Province</label>
-                                        <select name="province" id="province" class="rounded-md border-gray-300 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 w-full">
-                                            <option value="all">All Provinces</option>
-                                            <?php foreach ($provinces as $province): ?>
-                                                <option value="<?php echo $province['id']; ?>" <?php echo $selected_province == $province['id'] ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($province['name']); ?>
-                                                </option>
-                                            <?php endforeach; ?>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="mt-6">
-                                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                                            View
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="card-icon bg-success bg-opacity-10 text-success me-3">
+                            <i class="bi bi-clipboard-check"></i>
                         </div>
-                    </div>
-
-                    <!-- Summary Cards -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-blue-100 text-blue-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Total Requests</h3>
-                                    <p class="text-3xl font-bold text-gray-700"><?php echo isset($total_requests) ? $total_requests : 0; ?></p>
-                                    <p class="text-sm text-gray-500">For <?php echo $period_label; ?></p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-green-100 text-green-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                    </svg>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Most Requested</h3>
-                                    <p class="text-xl font-bold text-gray-700">
-                                        <?php 
-                                        if (!empty($support_summary)) {
-                                            usort($support_summary, function($a, $b) {
-                                                return $b['count'] - $a['count'];
-                                            });
-                                            echo htmlspecialchars($support_summary[0]['support_type']);
-                                        } else {
-                                            echo "No data";
-                                        }
-                                        ?>
-                                    </p>
-                                    <p class="text-sm text-gray-500">
-                                        <?php 
-                                        if (!empty($support_summary)) {
-                                            echo $support_summary[0]['count'] . " requests";
-                                        } else {
-                                            echo "&nbsp;";
-                                        }
-                                        ?>
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <div class="flex items-center">
-                                <div class="p-3 rounded-full bg-purple-100 text-purple-600">
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                                    </svg>
-                                </div>
-                                <div class="ml-4">
-                                    <h3 class="text-lg font-medium text-gray-900">Provinces Served</h3>
-                                    <p class="text-3xl font-bold text-gray-700">
-                                        <?php echo count($services_by_province); ?>
-                                    </p>
-                                    <p class="text-sm text-gray-500">With service requests</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Services Provided Table -->
-                    <div class="bg-white rounded-lg shadow-md mb-6">
-                        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                Services Provided - <?php echo $period_label; ?>
-                            </h3>
-                            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                                <?php echo $view_type === 'monthly' ? 'Monthly' : ($view_type === 'semester' ? 'Semester' : 'Yearly'); ?> breakdown of DICT services usage.
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">Most Requested</h6>
+                            <h5 class="card-title mb-0">
+                                <?php 
+                                if (!empty($support_summary)) {
+                                    usort($support_summary, function($a, $b) {
+                                        return $b['count'] - $a['count'];
+                                    });
+                                    echo htmlspecialchars($support_summary[0]['support_type']);
+                                } else {
+                                    echo "No data";
+                                }
+                                ?>
+                            </h5>
+                            <p class="card-text small text-muted">
+                                <?php 
+                                if (!empty($support_summary)) {
+                                    echo $support_summary[0]['count'] . " requests";
+                                } else {
+                                    echo "&nbsp;";
+                                }
+                                ?>
                             </p>
-                        </div>
-                        
-                        <div class="table-container">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50 sticky-header">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Services Provided
-                                        </th>
-                                        <?php 
-                                        if (!empty($services_by_month) && !empty($services_by_month[0]['monthly_counts'])) {
-                                            foreach (array_keys($services_by_month[0]['monthly_counts']) as $month) {
-                                                echo '<th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">' . $month . '</th>';
-                                            }
-                                        }
-                                        ?>
-                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-100">
-                                            Total
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php if (empty($services_by_month)): ?>
-                                    <tr>
-                                        <td colspan="<?php echo count($services_by_month[0]['monthly_counts'] ?? []) + 2; ?>" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                            No data available for this period.
-                                        </td>
-                                    </tr>
-                                    <?php else: ?>
-                                        <?php 
-                                        $filtered_services = array_filter($services_by_month, function($service) {
-                                            return $service['total'] > 0;
-                                        });
-                                        
-                                        if (empty($filtered_services)) {
-                                            $filtered_services = $services_by_month;
-                                        }
-                                        
-                                        foreach ($filtered_services as $index => $service): 
-                                        ?>
-                                        <tr class="<?php echo $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'; ?>">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                <?php echo htmlspecialchars($service['name']); ?>
-                                            </td>
-                                            <?php foreach ($service['monthly_counts'] as $count): ?>
-                                                <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                                    <?php echo $count; ?>
-                                                </td>
-                                            <?php endforeach; ?>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900 bg-gray-100">
-                                                <?php echo $service['total']; ?>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                        
-                                        <!-- Total Row -->
-                                        <tr class="bg-blue-50">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                TOTAL
-                                            </td>
-                                            <?php 
-                                            if (!empty($services_by_month) && !empty($services_by_month[0]['monthly_counts'])) {
-                                                $months = array_keys($services_by_month[0]['monthly_counts']);
-                                                foreach ($months as $month) {
-                                                    $month_total = 0;
-                                                    foreach ($services_by_month as $service) {
-                                                        $month_total += $service['monthly_counts'][$month];
-                                                    }
-                                                    echo '<td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900">' . $month_total . '</td>';
-                                                }
-                                            }
-                                            
-                                            $grand_total = 0;
-                                            foreach ($services_by_month as $service) {
-                                                $grand_total += $service['total'];
-                                            }
-                                            ?>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900 bg-blue-100">
-                                                <?php echo $grand_total; ?>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Services by Province Table -->
-                    <div class="bg-white rounded-lg shadow-md mb-6">
-                        <div class="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">
-                                Services by Province - <?php echo $period_label; ?>
-                            </h3>
-                            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                                Breakdown of DICT services usage by province.
-                            </p>
-                        </div>
-                        
-                        <div class="table-container">
-                            <table class="min-w-full divide-y divide-gray-200">
-                                <thead class="bg-gray-50 sticky-header">
-                                    <tr>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Province
-                                        </th>
-                                        <?php foreach ($service_categories as $category): ?>
-                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            <?php echo htmlspecialchars($category); ?>
-                                        </th>
-                                        <?php endforeach; ?>
-                                        <th scope="col" class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-100">
-                                            Grand Total
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="bg-white divide-y divide-gray-200">
-                                    <?php if (empty($services_by_province)): ?>
-                                    <tr>
-                                        <td colspan="<?php echo count($service_categories) + 2; ?>" class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                            No data available for this period.
-                                        </td>
-                                    </tr>
-                                    <?php else: ?>
-                                        <?php foreach ($services_by_province as $index => $province): ?>
-                                        <tr class="<?php echo $index % 2 === 0 ? 'bg-white' : 'bg-gray-50'; ?>">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                                <?php echo htmlspecialchars($province['name']); ?>
-                                            </td>
-                                            <?php foreach ($service_categories as $category): ?>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
-                                                <?php echo isset($province['services'][$category]) ? $province['services'][$category] : 0; ?>
-                                            </td>
-                                            <?php endforeach; ?>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium text-gray-900 bg-gray-100">
-                                                <?php echo $province['grand_total']; ?>
-                                            </td>
-                                        </tr>
-                                        <?php endforeach; ?>
-                                        
-                                        <!-- Total Row -->
-                                        <tr class="bg-blue-50">
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                                                TOTAL
-                                            </td>
-                                            <?php 
-                                            foreach ($service_categories as $category) {
-                                                $total = 0;
-                                                foreach ($services_by_province as $province) {
-                                                    $total += isset($province['services'][$category]) ? $province['services'][$category] : 0;
-                                                }
-                                                echo '<td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900">' . $total . '</td>';
-                                            }
-                                            
-                                            $actual_grand_total = 0;
-                                            foreach ($services_by_province as $province) {
-                                                $actual_grand_total += $province['grand_total'];
-                                            }
-                                            ?>
-                                            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-gray-900 bg-blue-100">
-                                                <?php echo $actual_grand_total; ?>
-                                            </td>
-                                        </tr>
-                                    <?php endif; ?>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Charts -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Support Types Distribution</h3>
-                            <div class="h-80">
-                                <canvas id="supportTypeChart"></canvas>
-                            </div>
-                        </div>
-                        
-                        <div class="bg-white rounded-lg shadow-md p-6">
-                            <h3 class="text-lg font-medium text-gray-900 mb-4">Top Provinces by Service Usage</h3>
-                            <div class="h-80">
-                                <canvas id="provinceChart"></canvas>
-                            </div>
                         </div>
                     </div>
                 </div>
-            </main>
-
-            <!-- Footer -->
-            <footer class="bg-white border-t border-gray-200 py-4">
-                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <p class="text-center text-sm text-gray-500">© 2025 DICT Client Management System. All rights reserved.</p>
+            </div>
+            
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="card-icon bg-info bg-opacity-10 text-info me-3">
+                            <i class="bi bi-geo-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="card-subtitle mb-1 text-muted">Provinces Served</h6>
+                            <h2 class="card-title mb-0">
+                                <?php echo count($services_by_province); ?>
+                            </h2>
+                            <p class="card-text small text-muted">With service requests</p>
+                        </div>
+                    </div>
                 </div>
-            </footer>
+            </div>
+        </div>
+
+        <!-- Services Provided Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Services Provided - <?php echo $period_label; ?></h5>
+                <p class="text-muted small mb-0">
+                    <?php echo $view_type === 'monthly' ? 'Monthly' : ($view_type === 'semester' ? 'Semester' : 'Yearly'); ?> breakdown of DICT services usage.
+                </p>
+            </div>
+            
+            <div class="table-container">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="sticky-header">
+                        <tr>
+                            <th>Services Provided</th>
+                            <?php 
+                            if (!empty($services_by_month) && !empty($services_by_month[0]['monthly_counts'])) {
+                                foreach (array_keys($services_by_month[0]['monthly_counts']) as $month) {
+                                    echo '<th class="text-center">' . $month . '</th>';
+                                }
+                            }
+                            ?>
+                            <th class="text-center bg-light">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($services_by_month)): ?>
+                        <tr>
+                            <td colspan="<?php echo count($services_by_month[0]['monthly_counts'] ?? []) + 2; ?>" class="text-center py-4">
+                                No data available for this period.
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                            <?php 
+                            $filtered_services = array_filter($services_by_month, function($service) {
+                                return $service['total'] > 0;
+                            });
+                            
+                            if (empty($filtered_services)) {
+                                $filtered_services = $services_by_month;
+                            }
+                            
+                            foreach ($filtered_services as $service): 
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($service['name']); ?></td>
+                                <?php foreach ($service['monthly_counts'] as $count): ?>
+                                    <td class="text-center"><?php echo $count; ?></td>
+                                <?php endforeach; ?>
+                                <td class="text-center fw-bold bg-light"><?php echo $service['total']; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            
+                            <!-- Total Row -->
+                            <tr class="table-primary">
+                                <td class="fw-bold">TOTAL</td>
+                                <?php 
+                                if (!empty($services_by_month) && !empty($services_by_month[0]['monthly_counts'])) {
+                                    $months = array_keys($services_by_month[0]['monthly_counts']);
+                                    foreach ($months as $month) {
+                                        $month_total = 0;
+                                        foreach ($services_by_month as $service) {
+                                            $month_total += $service['monthly_counts'][$month];
+                                        }
+                                        echo '<td class="text-center fw-bold">' . $month_total . '</td>';
+                                    }
+                                }
+                                
+                                $grand_total = 0;
+                                foreach ($services_by_month as $service) {
+                                    $grand_total += $service['total'];
+                                }
+                                ?>
+                                <td class="text-center fw-bold bg-primary bg-opacity-25"><?php echo $grand_total; ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Services by Province Table -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Services by Province - <?php echo $period_label; ?></h5>
+                <p class="text-muted small mb-0">Breakdown of DICT services usage by province.</p>
+            </div>
+            
+            <div class="table-container">
+                <table class="table table-striped table-hover mb-0">
+                    <thead class="sticky-header">
+                        <tr>
+                            <th>Province</th>
+                            <?php foreach ($service_categories as $category): ?>
+                            <th class="text-center"><?php echo htmlspecialchars($category); ?></th>
+                            <?php endforeach; ?>
+                            <th class="text-center bg-light">Grand Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($services_by_province)): ?>
+                        <tr>
+                            <td colspan="<?php echo count($service_categories) + 2; ?>" class="text-center py-4">
+                                No data available for this period.
+                            </td>
+                        </tr>
+                        <?php else: ?>
+                            <?php foreach ($services_by_province as $province): ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($province['name']); ?></td>
+                                <?php foreach ($service_categories as $category): ?>
+                                <td class="text-center"><?php echo isset($province['services'][$category]) ? $province['services'][$category] : 0; ?></td>
+                                <?php endforeach; ?>
+                                <td class="text-center fw-bold bg-light"><?php echo $province['grand_total']; ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            
+                            <!-- Total Row -->
+                            <tr class="table-primary">
+                                <td class="fw-bold">TOTAL</td>
+                                <?php 
+                                foreach ($service_categories as $category) {
+                                    $total = 0;
+                                    foreach ($services_by_province as $province) {
+                                        $total += isset($province['services'][$category]) ? $province['services'][$category] : 0;
+                                    }
+                                    echo '<td class="text-center fw-bold">' . $total . '</td>';
+                                }
+                                
+                                $actual_grand_total = 0;
+                                foreach ($services_by_province as $province) {
+                                    $actual_grand_total += $province['grand_total'];
+                                }
+                                ?>
+                                <td class="text-center fw-bold bg-primary bg-opacity-25"><?php echo $actual_grand_total; ?></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Support Types Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="supportTypeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Top Provinces by Service Usage</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="provinceChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
-    <!-- JavaScript for Charts and Interactivity -->
+    <!-- Footer -->
+    <footer class="bg-white py-4 mt-auto border-top">
+        <div class="container-fluid">
+            <div class="text-center small">
+                <div class="text-muted">© 2025 DICT Client Management System. All rights reserved.</div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Include Page Wrapper End -->
+
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript for Sidebar Dropdown -->
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const filterForm = document.getElementById('filterForm');
-            const viewTypeSelect = document.getElementById('view_type');
-            const monthSelect = document.getElementById('month');
-            const yearSelect = document.getElementById('year');
-            const provinceSelect = document.getElementById('province');
-            
-            function submitForm() {
-                filterForm.submit();
-            }
-            
-            viewTypeSelect.addEventListener('change', function() {
-                if (this.value === 'monthly') {
-                    monthSelect.disabled = false;
-                } else {
-                    monthSelect.disabled = true;
-                }
-                submitForm();
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all Bootstrap dropdowns and collapses
+        var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+        var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl);
+        });
+        
+        var collapseElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="collapse"]'));
+        var collapseList = collapseElementList.map(function(collapseToggleEl) {
+            return new bootstrap.Collapse(collapseToggleEl.getAttribute('data-bs-target') || collapseToggleEl.getAttribute('href'), {
+                toggle: false
             });
-            
-            monthSelect.addEventListener('change', submitForm);
-            yearSelect.addEventListener('change', submitForm);
-            provinceSelect.addEventListener('change', submitForm);
-            
-            const supportTypeData = <?php 
-                $chart_data = array_filter($support_summary, function($item) {
-                    return $item['count'] > 0;
-                });
-                echo json_encode($chart_data); 
-            ?>;
-            
-            if (supportTypeData.length > 0) {
-                const supportTypeCtx = document.getElementById('supportTypeChart').getContext('2d');
-                const supportTypeChart = new Chart(supportTypeCtx, {
-                    type: 'pie',
-                    data: {
-                        labels: supportTypeData.map(item => item.support_type),
-                        datasets: [{
-                            data: supportTypeData.map(item => item.count),
-                            backgroundColor: [
-                                '#4F46E5', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-                                '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1'
-                            ],
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                            }
-                        }
+        });
+        
+        // Manually handle Tech Supports dropdown
+        var techSupportsToggle = document.querySelector('[data-bs-target="#techSupportsSubmenu"]');
+        if (techSupportsToggle) {
+            techSupportsToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = document.querySelector(this.getAttribute('data-bs-target'));
+                if (target) {
+                    if (target.classList.contains('show')) {
+                        bootstrap.Collapse.getInstance(target).hide();
+                    } else {
+                        bootstrap.Collapse.getInstance(target).show();
                     }
-                });
+                }
+            });
+        }
+        
+        // Form handling
+        const filterForm = document.getElementById('filterForm');
+        const viewTypeSelect = document.getElementById('view_type');
+        const monthSelect = document.getElementById('month');
+        
+        viewTypeSelect.addEventListener('change', function() {
+            if (this.value === 'monthly') {
+                monthSelect.disabled = false;
             } else {
-                document.getElementById('supportTypeChart').parentNode.innerHTML = 
-                    '<div class="flex items-center justify-center h-full text-gray-500">No data available for this period</div>';
-            }
-            
-            const provinceData = <?php 
-                $top_provinces = $services_by_province;
-                usort($top_provinces, function($a, $b) {
-                    return $b['grand_total'] - $a['grand_total'];
-                });
-                $top_provinces = array_slice($top_provinces, 0, 5);
-                echo json_encode($top_provinces); 
-            ?>;
-            
-            if (provinceData.length > 0) {
-                const provinceLabels = provinceData.map(p => p.name);
-                const provinceCounts = provinceData.map(p => p.grand_total);
-                
-                const provinceCtx = document.getElementById('provinceChart').getContext('2d');
-                const provinceChart = new Chart(provinceCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: provinceLabels,
-                        datasets: [{
-                            label: 'Service Requests',
-                            data: provinceCounts,
-                            backgroundColor: '#10B981',
-                            borderColor: '#059669',
-                            borderWidth: 1
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: {
-                                    precision: 0
-                                }
-                            }
-                        }
-                    }
-                });
-            } else {
-                document.getElementById('provinceChart').parentNode.innerHTML = 
-                    '<div class="flex items-center justify-center h-full text-gray-500">No data available for this period</div>';
+                monthSelect.disabled = true;
             }
         });
+        
+        // Charts
+        const supportTypeData = <?php 
+            $chart_data = array_filter($support_summary, function($item) {
+                return $item['count'] > 0;
+            });
+            echo json_encode($chart_data); 
+        ?>;
+        
+        if (supportTypeData.length > 0) {
+            const supportTypeCtx = document.getElementById('supportTypeChart').getContext('2d');
+            const supportTypeChart = new Chart(supportTypeCtx, {
+                type: 'pie',
+                data: {
+                    labels: supportTypeData.map(item => item.support_type),
+                    datasets: [{
+                        data: supportTypeData.map(item => item.count),
+                        backgroundColor: [
+                            '#4361ee', '#3a0ca3', '#7209b7', '#f72585', '#4cc9f0',
+                            '#4895ef', '#560bad', '#f15bb5', '#fee440', '#00bbf9'
+                        ],
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                        }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('supportTypeChart').parentNode.innerHTML = 
+                '<div class="d-flex align-items-center justify-content-center h-100 text-muted">No data available for this period</div>';
+        }
+        
+        const provinceData = <?php 
+            $top_provinces = $services_by_province;
+            usort($top_provinces, function($a, $b) {
+                return $b['grand_total'] - $a['grand_total'];
+            });
+            $top_provinces = array_slice($top_provinces, 0, 5);
+            echo json_encode($top_provinces); 
+        ?>;
+        
+        if (provinceData.length > 0) {
+            const provinceLabels = provinceData.map(p => p.name);
+            const provinceCounts = provinceData.map(p => p.grand_total);
+            
+            const provinceCtx = document.getElementById('provinceChart').getContext('2d');
+            const provinceChart = new Chart(provinceCtx, {
+                type: 'bar',
+                data: {
+                    labels: provinceLabels,
+                    datasets: [{
+                        label: 'Service Requests',
+                        data: provinceCounts,
+                        backgroundColor: '#4cc9f0',
+                        borderColor: '#4895ef',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
+                    }
+                }
+            });
+        } else {
+            document.getElementById('provinceChart').parentNode.innerHTML = 
+                '<div class="d-flex align-items-center justify-content-center h-100 text-muted">No data available for this period</div>';
+        }
+    });
     </script>
 </body>
 </html>

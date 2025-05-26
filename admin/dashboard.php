@@ -11,6 +11,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 // Include database connection
 include_once '../includes/db_connect.php';
 
+// Set page title
+$page_title = "Dashboard";
+
 // Fetch service requests from the database
 $serviceRequests = [];
 $query = "SELECT tsr.*, 
@@ -20,7 +23,8 @@ $query = "SELECT tsr.*,
           LEFT JOIN provinces p ON tsr.province_id = p.id
           LEFT JOIN districts d ON tsr.district_id = d.id
           LEFT JOIN municipalities m ON tsr.municipality_id = m.id
-          ORDER BY tsr.date_requested DESC";
+          ORDER BY tsr.date_requested DESC
+          LIMIT 10"; // Limit to 10 most recent requests
 
 $result = $conn->query($query);
 
@@ -47,8 +51,6 @@ if ($result && $result->num_rows > 0) {
 }
 
 // Get statistics
-$totalRequests = count($serviceRequests);
-
 // Use SQL COUNT for more efficient statistics
 $statsQuery = "SELECT 
     COUNT(*) as total,
@@ -66,6 +68,7 @@ if ($statsResult && $statsResult->num_rows > 0) {
     $resolvedRequests = $stats['resolved'];
 } else {
     // Fallback to PHP counting if SQL query fails
+    $totalRequests = count($serviceRequests);
     $pendingRequests = count(array_filter($serviceRequests, function($req) {
         return $req['status'] === 'Pending';
     }));
@@ -82,202 +85,339 @@ if ($statsResult && $statsResult->num_rows > 0) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - DICT Client Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title><?php echo $page_title; ?> - DICT Client Management System</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom CSS -->
     <style>
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            overflow-x: hidden;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: white;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.5rem;
+        }
+        
+        /* Stats Card Styles */
+        .stats-card {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .stats-icon {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.5rem;
+        }
+        
+        .stats-title {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stats-value {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0;
+        }
+        
+        /* Table Styles */
+        .table-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 1.5rem;
+            overflow: hidden;
+        }
+        
+        .table-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .table-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #212529;
+            margin-bottom: 0;
+        }
+        
+        .table-link {
+            font-size: 0.875rem;
+            color: #0d6efd;
+            text-decoration: none;
+        }
+        
+        .table-link:hover {
+            text-decoration: underline;
+        }
+        
+        /* Status Badge Styles */
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 9999px;
+        }
+        
+        .status-pending {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-progress {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        .status-resolved {
+            background-color: #d4edda;
+            color: #155724;
         }
     </style>
 </head>
-<?php include '../admin/includes/sidebar.php'; ?>
-<body class="bg-gray-100">
+<body>
+    <!-- Include Sidebar -->
+    <?php include 'includes/sidebar.php'; ?>
     
-
-        <!-- Main Content -->
-        <div class="flex-1 overflow-auto">
-            <!-- Top Bar -->
-            <div class="bg-white shadow-sm">
-                <div class="flex justify-between items-center py-4 px-6">
-                    <h1 class="text-2xl font-semibold text-gray-800">Dashboard</h1>
-                    <div class="flex items-center">
-                        <span class="mr-2 text-sm text-gray-600">Welcome, <?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
-                        <button class="relative p-1 rounded-full text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            <span class="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500"></span>
-                        </button>
+    <!-- Page Content -->
+    <div class="container-fluid py-4">
+        <!-- Stats Cards -->
+        <div class="row">
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-primary bg-opacity-10 text-primary me-3">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <div>
+                            <h6 class="stats-title">Total Requests</h6>
+                            <p class="stats-value"><?php echo $totalRequests; ?></p>
+                        </div>
                     </div>
                 </div>
             </div>
-
-            <!-- Dashboard Content -->
-            <div class="p-6">
-                <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-blue-100 text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h2 class="text-gray-600 text-sm font-medium">Total Requests</h2>
-                                <p class="text-3xl font-semibold text-gray-800"><?php echo $totalRequests; ?></p>
-                            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-warning bg-opacity-10 text-warning me-3">
+                            <i class="bi bi-clock"></i>
                         </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-yellow-100 text-yellow-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h2 class="text-gray-600 text-sm font-medium">Pending</h2>
-                                <p class="text-3xl font-semibold text-gray-800"><?php echo $pendingRequests; ?></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-blue-100 text-blue-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h2 class="text-gray-600 text-sm font-medium">In Progress</h2>
-                                <p class="text-3xl font-semibold text-gray-800"><?php echo $inProgressRequests; ?></p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white rounded-lg shadow p-6">
-                        <div class="flex items-center">
-                            <div class="p-3 rounded-full bg-green-100 text-green-800">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                            </div>
-                            <div class="ml-4">
-                                <h2 class="text-gray-600 text-sm font-medium">Resolved</h2>
-                                <p class="text-3xl font-semibold text-gray-800"><?php echo $resolvedRequests; ?></p>
-                            </div>
+                        <div>
+                            <h6 class="stats-title">Pending</h6>
+                            <p class="stats-value"><?php echo $pendingRequests; ?></p>
                         </div>
                     </div>
                 </div>
-
-                <!-- Recent Service Requests -->
-                <div class="bg-white rounded-lg shadow mb-8">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <h2 class="text-lg font-medium text-gray-900">Recent Service Requests</h2>
-                            <a href="service-requests.php" class="text-sm font-medium text-blue-600 hover:text-blue-500">
-                                View All
-                            </a>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-info bg-opacity-10 text-info me-3">
+                            <i class="bi bi-arrow-repeat"></i>
+                        </div>
+                        <div>
+                            <h6 class="stats-title">In Progress</h6>
+                            <p class="stats-value"><?php echo $inProgressRequests; ?></p>
                         </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                </div>
+            </div>
+            
+            <div class="col-md-3 mb-4">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="stats-icon bg-success bg-opacity-10 text-success me-3">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div>
+                            <h6 class="stats-title">Resolved</h6>
+                            <p class="stats-value"><?php echo $resolvedRequests; ?></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Recent Service Requests -->
+        <div class="table-container">
+            <div class="table-header">
+                <h5 class="table-title">Recent Service Requests</h5>
+                <a href="service-requests.php" class="table-link">View All</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Client</th>
+                            <th>Agency</th>
+                            <th>Service Type</th>
+                            <th>Date Requested</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($serviceRequests)): ?>
+                            <tr>
+                                <td colspan="6" class="text-center">No service requests found.</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php foreach ($serviceRequests as $request): ?>
                                 <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Client
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Agency
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Service Type
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Date Requested
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <?php foreach ($serviceRequests as $request): ?>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900"><?php echo htmlspecialchars($request['client_name']); ?></div>
-                                        <div class="text-sm text-gray-500"><?php echo htmlspecialchars($request['region']); ?>, <?php echo htmlspecialchars($request['province']); ?></div>
+                                    <td>
+                                        <div class="fw-medium"><?php echo htmlspecialchars($request['client_name']); ?></div>
+                                        <div class="small text-muted"><?php echo htmlspecialchars($request['region']); ?>, <?php echo htmlspecialchars($request['province']); ?></div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['agency']); ?></div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['service_type']); ?></div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm text-gray-900"><?php echo htmlspecialchars($request['date_requested']); ?></div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
+                                    <td><?php echo htmlspecialchars($request['agency']); ?></td>
+                                    <td><?php echo htmlspecialchars($request['service_type']); ?></td>
+                                    <td><?php echo htmlspecialchars($request['date_requested']); ?></td>
+                                    <td>
                                         <?php if ($request['status'] === 'Resolved'): ?>
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                                                Resolved
-                                            </span>
+                                            <span class="status-badge status-resolved">Resolved</span>
                                         <?php elseif ($request['status'] === 'In Progress'): ?>
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                                                In Progress
-                                            </span>
+                                            <span class="status-badge status-progress">In Progress</span>
                                         <?php else: ?>
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                                                Pending
-                                            </span>
+                                            <span class="status-badge status-pending">Pending</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <a href="view-request.php?id=<?php echo $request['id']; ?>" class="text-blue-600 hover:text-blue-900 mr-3">View</a>
-                                        <a href="edit_service.php?id=<?php echo $request['id']; ?>" class="text-indigo-600 hover:text-indigo-900">Edit</a>
+                                    <td>
+                                        <a href="view-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-primary me-1">View</a>
+                                        <a href="edit_service.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
                                     </td>
                                 </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Charts -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Service Type Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div style="height: 300px;" class="d-flex align-items-center justify-content-center">
+                            <p class="text-muted mb-0">Chart visualization would be displayed here</p>
+                        </div>
                     </div>
                 </div>
-
-                <!-- Service Type Distribution -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div class="bg-white rounded-lg shadow">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-medium text-gray-900">Service Type Distribution</h2>
-                        </div>
-                        <div class="p-6">
-                            <div class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500 text-sm">Chart visualization would be displayed here</p>
-                                <!-- In a real application, you would use a charting library like Chart.js -->
-                            </div>
-                        </div>
+            </div>
+            
+            <div class="col-md-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Regional Distribution</h5>
                     </div>
-
-                    <div class="bg-white rounded-lg shadow">
-                        <div class="px-6 py-4 border-b border-gray-200">
-                            <h2 class="text-lg font-medium text-gray-900">Regional Distribution</h2>
-                        </div>
-                        <div class="p-6">
-                            <div class="h-64 flex items-center justify-center">
-                                <p class="text-gray-500 text-sm">Chart visualization would be displayed here</p>
-                                <!-- In a real application, you would use a charting library like Chart.js -->
-                            </div>
+                    <div class="card-body">
+                        <div style="height: 300px;" class="d-flex align-items-center justify-content-center">
+                            <p class="text-muted mb-0">Chart visualization would be displayed here</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="bg-white py-4 mt-auto border-top">
+        <div class="container-fluid">
+            <div class="text-center small">
+                <div class="text-muted">© 2025 DICT Client Management System. All rights reserved.</div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Include Page Wrapper End -->
+    <?php include 'includes/page-wrapper.php'; ?>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript for Sidebar Dropdown -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Initialize all Bootstrap dropdowns and collapses
+        var dropdownElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="dropdown"]'));
+        var dropdownList = dropdownElementList.map(function(dropdownToggleEl) {
+            return new bootstrap.Dropdown(dropdownToggleEl);
+        });
+        
+        var collapseElementList = [].slice.call(document.querySelectorAll('[data-bs-toggle="collapse"]'));
+        var collapseList = collapseElementList.map(function(collapseToggleEl) {
+            return new bootstrap.Collapse(collapseToggleEl.getAttribute('data-bs-target') || collapseToggleEl.getAttribute('href'), {
+                toggle: false
+            });
+        });
+        
+        // Manually handle Tech Supports dropdown
+        var techSupportsToggle = document.querySelector('[data-bs-target="#techSupportsSubmenu"]');
+        if (techSupportsToggle) {
+            techSupportsToggle.addEventListener('click', function(e) {
+                e.preventDefault();
+                var target = document.querySelector(this.getAttribute('data-bs-target') || this.getAttribute('href'));
+                if (target) {
+                    if (target.classList.contains('show')) {
+                        bootstrap.Collapse.getInstance(target).hide();
+                    } else {
+                        bootstrap.Collapse.getInstance(target).show();
+                    }
+                }
+            });
+        }
+    });
+    </script>
 </body>
 </html>
