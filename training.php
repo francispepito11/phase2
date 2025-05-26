@@ -121,7 +121,6 @@ $past_events = [
                     </div>
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
                         <a href="index.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Home</a>
-                        <a href="services_provided.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Services</a>
                         <a href="training.php" class="border-b-2 border-white px-1 pt-1 text-sm font-medium">Training</a>
                         <a href="tech-support.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Tech Support</a>
                     </div>

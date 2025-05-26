@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DICT Client Management System</title>
+    <title>ILCDB</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -19,8 +19,10 @@
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
-                        <span class="text-xl font-bold">DICT Client Management System</span>
+                        <a href="http://localhost/phase2/admin/login.php">
+                            <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
+                        </a>
+                        <span class="text-xl font-bold">ILCDB Client Services Portal</span>
                     </div>
                 </div>
             </div>
@@ -32,14 +34,14 @@
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 flex flex-col items-center">
             <div class="text-center">
                 <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
-                    DICT Client Services Portal
+                    ILCDB Client Services Portal
                 </h1>
                 <p class="mt-6 text-xl max-w-3xl">
                     Providing technical support and services to government agencies and the public.
                 </p>
             </div>
             
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl">
+            <div class="mt-12 grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl">
                 <!-- Services Provided Button -->
                 <!-- <a href="services_provided.php" class="bg-white text-blue-700 hover:bg-gray-100 rounded-lg shadow-lg overflow-hidden flex flex-col items-center text-center p-8 transition-all duration-200 transform hover:scale-105">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -69,13 +71,7 @@
                 </a>
                 
                 <!-- Admin Login Button -->
-                <a href="admin/login.php" class="bg-white text-blue-700 hover:bg-gray-100 rounded-lg shadow-lg overflow-hidden flex flex-col items-center text-center p-8 transition-all duration-200 transform hover:scale-105">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h2 class="text-xl font-bold">Admin Login</h2>
-                    <p class="mt-2 text-sm text-gray-600">Login to the admin dashboard</p>
-                </a>
+                
             </div>
         </div>
     </div>    <!-- Footer -->

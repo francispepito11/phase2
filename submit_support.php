@@ -78,9 +78,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'region' => $region,
                 'region_id' => $region,
                 'province_id' => $province_id,
-                'district_id' => $district_id,                'municipality_id' => $municipality_id,
-                'support_type' => $support_type,
+                'district_id' => $district_id,                'municipality_id' => $municipality_id,                'support_type' => $support_type,
                 'subject' => $subject,
+                'message' => $message,
                 'status' => 'Pending',
                 'date_requested' => $current_datetime
             ];
