@@ -1,9 +1,23 @@
+-- --------------------------------------------------------
+
+-- Table structure for table `client_feedback`
+
+CREATE TABLE `client_feedback` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `support_request_id` int(11) DEFAULT NULL,
+  `client_name` varchar(100) DEFAULT NULL,
+  `rating` int(1) NOT NULL,
+  `comment` text DEFAULT NULL,
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id`),
+  KEY `support_request_id` (`support_request_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 19, 2025 at 01:13 PM
+-- Generation Time: May 27, 2025 at 02:27 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -20,86 +34,6 @@ SET time_zone = "+00:00";
 --
 -- Database: `dict`
 --
-
--- --------------------------------------------------------
-
---
--- Table structure for table `clients`
---
-
-CREATE TABLE `clients` (
-  `id` int(11) NOT NULL,
-  `client_name` varchar(100) NOT NULL,
-  `contact_person` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `phone` varchar(20) NOT NULL,
-  `address` text DEFAULT NULL,
-  `company_name` varchar(100) DEFAULT NULL,
-  `status` enum('Active','Inactive','Prospect') NOT NULL DEFAULT 'Active',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `clients`
---
-
-INSERT INTO `clients` (`id`, `client_name`, `contact_person`, `email`, `phone`, `address`, `company_name`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Acme Corporation', 'John Smith', 'john@acme.com', '(555) 123-4567', '123 Main St, Anytown, USA', 'Acme Corporation', 'Active', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(2, 'TechStart Inc.', 'Jane Doe', 'jane@techstart.com', '(555) 987-6543', '456 Tech Blvd, Innovation City, USA', 'TechStart Inc.', 'Active', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(3, 'Global Solutions', 'Robert Johnson', 'robert@globalsolutions.com', '(555) 456-7890', '789 Global Ave, Worldtown, USA', 'Global Solutions', 'Prospect', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(4, 'Innovative Systems', 'Sarah Williams', 'sarah@innovative.com', '(555) 234-5678', '321 Innovation Dr, Techville, USA', 'Innovative Systems', 'Inactive', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(5, 'Future Technologies', 'Michael Brown', 'michael@futuretech.com', '(555) 876-5432', '654 Future St, Tomorrow City, USA', 'Future Technologies', 'Active', '2025-05-14 07:36:56', '2025-05-14 07:36:56');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `client_notes`
---
-
-CREATE TABLE `client_notes` (
-  `id` int(11) NOT NULL,
-  `client_id` int(11) NOT NULL,
-  `user_id` int(11) NOT NULL,
-  `note_text` text NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `client_notes`
---
-
-INSERT INTO `client_notes` (`id`, `client_id`, `user_id`, `note_text`, `created_at`) VALUES
-(1, 1, 1, 'Initial meeting went well. Client is interested in our premium package.', '2023-06-10 06:30:00'),
-(2, 1, 1, 'Follow-up call scheduled for next week.', '2023-06-12 02:15:00'),
-(3, 2, 1, 'Client requested a demo of our new features.', '2023-06-11 01:45:00'),
-(4, 3, 1, 'Sent proposal for review.', '2023-06-13 08:20:00'),
-(5, 4, 1, 'Client is currently using a competitor product. Need to highlight our advantages.', '2023-06-09 03:30:00');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `client_training_sessions`
---
-
-CREATE TABLE `client_training_sessions` (
-  `id` int(11) NOT NULL,
-  `client_id` int(11) NOT NULL,
-  `session_id` int(11) NOT NULL,
-  `attendance_status` enum('Confirmed','Attended','No-Show','Cancelled') DEFAULT 'Confirmed'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `client_training_sessions`
---
-
-INSERT INTO `client_training_sessions` (`id`, `client_id`, `session_id`, `attendance_status`) VALUES
-(1, 1, 1, 'Confirmed'),
-(2, 2, 1, 'Confirmed'),
-(3, 1, 2, 'Confirmed'),
-(4, 3, 3, 'Confirmed'),
-(5, 2, 4, 'Attended'),
-(6, 4, 5, 'Cancelled');
 
 -- --------------------------------------------------------
 
@@ -155,23 +89,6 @@ CREATE TABLE `municipalities` (
 --
 
 INSERT INTO `municipalities` (`id`, `municipality_name`, `municipality_code`, `province_id`, `district_id`, `created_at`, `updated_at`) VALUES
-(1, 'Quezon City', 'QC', 1, 5, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(2, 'Manila', 'MLA', 1, 6, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(3, 'Makati', 'MKT', 1, 7, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(4, 'Taguig', 'TGG', 1, 8, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(5, 'Baguio City', 'BAG', 2, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(6, 'Laoag City', 'LAO', 3, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(7, 'Vigan City', 'VIG', 4, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(8, 'San Fernando', 'SFD', 5, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(9, 'Dagupan City', 'DAG', 6, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(10, 'Batangas City', 'BAT', 7, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(11, 'Cavite City', 'CAV', 8, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(12, 'Calamba', 'CAL', 9, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(13, 'Lucena City', 'LUC', 10, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(14, 'Antipolo', 'ANT', 11, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(16, 'Davao City', 'DAV', 13, 3, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(17, 'Tagum City', 'TAG', 14, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(18, 'Cotabato City', 'COT', 15, NULL, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (19, 'Jolo', 'JOL', 16, 4, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (20, 'Pagadian City', 'ZDS', 18, 13, '2025-05-16 08:22:38', '2025-05-18 07:16:38'),
 (21, 'Labangan', 'ZDS', 18, 13, '2025-05-16 08:22:38', '2025-05-18 07:16:38'),
@@ -251,22 +168,9 @@ CREATE TABLE `provinces` (
 --
 
 INSERT INTO `provinces` (`id`, `province_name`, `province_code`, `region_id`, `created_at`, `updated_at`) VALUES
-(1, 'Metro Manila', 'MM', 1, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(2, 'Benguet', 'BEN', 2, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(3, 'Ilocos Norte', 'ILN', 3, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(4, 'Ilocos Sur', 'ILS', 3, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(5, 'La Union', 'LUN', 3, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(6, 'Pangasinan', 'PAN', 3, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(7, 'Batangas', 'BAT', 6, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(8, 'Cavite', 'CAV', 6, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(9, 'Laguna', 'LAG', 6, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(10, 'Quezon', 'QUE', 6, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(11, 'Rizal', 'RIZ', 6, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
 (12, 'Zamboanga Del Norte', 'ZDN', 12, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(13, 'Davao Del Sur', 'DDS', 14, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(14, 'Davao Del Norte', 'DDN', 14, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(15, 'Maguindanao', 'MAG', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
-(16, 'Sulu', 'SUL', 17, '2025-05-14 07:00:00', '2025-05-14 07:00:00'),
+(15, 'Bongao', 'BNG', 14, '2025-05-26 06:35:41', '2025-05-26 06:48:25'),
+(16, 'Sulu', 'JOL', 17, '2025-05-14 07:00:00', '2025-05-26 06:27:20'),
 (17, 'Zamboanga Sibugay', 'ZSP', 12, '2025-05-16 08:06:39', '2025-05-16 08:06:39'),
 (18, 'Zamboanga Del Sur', 'ZDS', 12, '2025-05-16 08:04:01', '2025-05-18 07:13:17');
 
@@ -289,44 +193,9 @@ CREATE TABLE `regions` (
 --
 
 INSERT INTO `regions` (`id`, `region_code`, `region_name`, `created_at`, `updated_at`) VALUES
-(1, 'NCR', 'National Capital Region (NCR)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(2, 'CAR', 'Cordillera Administrative Region (CAR)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(3, 'Region I', 'Region I (Ilocos Region)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(4, 'Region II', 'Region II (Cagayan Valley)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(5, 'Region III', 'Region III (Central Luzon)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(6, 'Region IV-A', 'Region IV-A (CALABARZON)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(7, 'Region IV-B', 'Region IV-B (MIMAROPA)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(8, 'Region V', 'Region V (Bicol Region)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(9, 'Region VI', 'Region VI (Western Visayas)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(10, 'Region VII', 'Region VII (Central Visayas)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(11, 'Region VIII', 'Region VIII (Eastern Visayas)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
 (12, 'Region IX', 'Region IX (Zamboanga Peninsula)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(13, 'Region X', 'Region X (Northern Mindanao)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(14, 'Region XI', 'Region XI (Davao Region)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(15, 'Region XII', 'Region XII (SOCCSKSARGEN)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(16, 'Region XIII', 'Region XIII (Caraga)', '2025-05-15 02:24:30', '2025-05-15 02:24:30'),
-(17, 'BARMM', 'Bangsamoro Autonomous Region in Muslim Mindanao', '2025-05-15 02:24:30', '2025-05-15 02:24:30');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `service_requests`
---
-
-CREATE TABLE `service_requests` (
-  `id` int(11) NOT NULL,
-  `client_id` int(11) NOT NULL,
-  `service_type_id` int(11) NOT NULL,
-  `description` text NOT NULL,
-  `date_requested` timestamp NOT NULL DEFAULT current_timestamp(),
-  `date_assisted` timestamp NULL DEFAULT NULL,
-  `date_resolved` timestamp NULL DEFAULT NULL,
-  `assisted_by_id` int(11) DEFAULT NULL,
-  `status` enum('Pending','In Progress','Resolved','Cancelled') DEFAULT 'Pending',
-  `remarks` text DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+(14, 'Tawi Tawi', 'Tawi Tawi (Bongao Province)', '2025-05-26 06:10:48', '2025-05-26 06:10:48'),
+(17, 'Jolo', 'Jolo (Sulu Province)', '2025-05-26 06:09:28', '2025-05-26 06:30:43');
 
 -- --------------------------------------------------------
 
@@ -426,7 +295,13 @@ CREATE TABLE `tech_support_requests` (
 --
 
 INSERT INTO `tech_support_requests` (`id`, `firstname`, `surname`, `middle_initial`, `client_name`, `agency`, `gender`, `age`, `region`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `subject`, `message`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
-(15, '', '', NULL, 'Bertizal', 'SCC', 'Male', 25, '', 12, 18, 13, 78, 'Use of Space, ICT Equipment and Internet Connectivity', 'Computer USE', '', '1', '2025-05-19 05:12:50', NULL, NULL, NULL, 'Pending', NULL, '2025-05-19 11:12:50', '2025-05-19 11:12:50');
+(15, '', '', NULL, 'Bertizal', 'SCC', 'Male', 25, '', 12, 18, 13, 78, 'Use of Space, ICT Equipment and Internet Connectivity', 'Computer USE', '', '1', '2025-05-19 05:12:50', NULL, NULL, NULL, 'Pending', NULL, '2025-05-19 11:12:50', '2025-05-19 11:12:50'),
+(16, 'Rasheed', 'Heding', 'M', 'Jose Rizal', 'SCC', 'Male', 25, '12', 17, 18, NULL, 29, 'WiFi Installation/Configuration', '1', '1', '1', '2025-05-19 11:19:07', '2025-05-19 21:58:23', '2025-05-19 21:59:20', NULL, 'Resolved', 'Q1', '2025-05-19 11:19:07', '2025-05-20 03:59:20'),
+(17, '', '', NULL, 'Nidzmmhar J Tuttuh', 'SCC', 'Male', 24, '', 12, 18, 13, 20, 'Use of Space, ICT Equipment and Internet Connectivity', '12', '', '12', '2025-05-19 05:20:26', NULL, NULL, NULL, 'Pending', NULL, '2025-05-19 11:20:26', '2025-05-19 11:20:26'),
+(18, 'Francis', 'Pepito', 'K', 'Francis K Pepito', 'SCC', 'Male', 25, '12', 12, 18, 13, 78, 'Use of Space, ICT Equipment and Internet Connectivity', '23', '', '23SFSF', '2025-05-19 05:24:37', '2025-05-19 05:26:03', '2025-05-19 05:26:32', NULL, 'Resolved', 'FIx', '2025-05-19 11:24:37', '2025-05-19 11:26:32'),
+(19, 'Jim', 'Hadjili', 'Y', 'Jim Y Hadjili', 'SCC', 'Female', 25, '12', 12, 18, NULL, 42, 'Sim Card Registration', 'Provide Support for Registration', '', '1', '2025-05-19 06:18:31', '2025-05-19 06:49:32', '2025-05-19 21:14:32', NULL, 'Resolved', 'Fix Yeah', '2025-05-19 12:18:31', '2025-05-20 03:42:47'),
+(20, 'Juan', 'Cruz', 'D', 'Juan D Cruz', 'DTI', 'Male', 0, '17', 17, 16, 4, 19, 'Comms-related concern', 'Repair', '', '', '2025-05-26 02:23:13', NULL, NULL, NULL, 'Pending', NULL, '2025-05-26 08:23:13', '2025-05-26 08:23:13'),
+(21, 'Yorme', 'Yorm', 'Y', 'Yorme Y Yorm', 'DEPED', 'Male', 0, '12', 12, 18, 13, 78, 'Use of ICT Equipment', 'Use of Computer', '', '', '2025-05-26 18:19:45', NULL, NULL, NULL, 'Pending', NULL, '2025-05-27 00:19:45', '2025-05-27 00:19:45');
 
 -- --------------------------------------------------------
 
@@ -472,37 +347,6 @@ CREATE TABLE `training_registrations` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `training_sessions`
---
-
-CREATE TABLE `training_sessions` (
-  `id` int(11) NOT NULL,
-  `session_title` varchar(100) NOT NULL,
-  `session_date` date NOT NULL,
-  `start_time` time NOT NULL,
-  `end_time` time NOT NULL,
-  `trainer_id` int(11) DEFAULT NULL,
-  `location` varchar(100) DEFAULT NULL,
-  `meeting_link` varchar(255) DEFAULT NULL,
-  `status` enum('Scheduled','Completed','Cancelled') NOT NULL DEFAULT 'Scheduled',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Dumping data for table `training_sessions`
---
-
-INSERT INTO `training_sessions` (`id`, `session_title`, `session_date`, `start_time`, `end_time`, `trainer_id`, `location`, `meeting_link`, `status`, `created_at`, `updated_at`) VALUES
-(1, 'Product Training', '2023-06-20', '10:00:00', '12:00:00', 1, 'Conference Room A', '', 'Scheduled', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(2, 'New Features Overview', '2023-06-22', '14:00:00', '15:30:00', 1, '', 'https://zoom.us/j/123456789', 'Scheduled', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(3, 'Advanced Techniques', '2023-06-25', '09:00:00', '11:00:00', 1, 'Training Room B', '', 'Scheduled', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(4, 'Onboarding Session', '2023-06-15', '13:00:00', '14:00:00', 1, '', 'https://zoom.us/j/987654321', 'Completed', '2025-05-14 07:36:56', '2025-05-14 07:36:56'),
-(5, 'Quarterly Review', '2023-06-10', '11:00:00', '12:30:00', 1, 'Conference Room C', '', 'Cancelled', '2025-05-14 07:36:56', '2025-05-14 07:36:56');
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `users`
 --
 
@@ -525,28 +369,6 @@ INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `created_at`
 --
 -- Indexes for dumped tables
 --
-
---
--- Indexes for table `clients`
---
-ALTER TABLE `clients`
-  ADD PRIMARY KEY (`id`);
-
---
--- Indexes for table `client_notes`
---
-ALTER TABLE `client_notes`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `client_id` (`client_id`),
-  ADD KEY `user_id` (`user_id`);
-
---
--- Indexes for table `client_training_sessions`
---
-ALTER TABLE `client_training_sessions`
-  ADD PRIMARY KEY (`id`),
-  ADD UNIQUE KEY `client_id` (`client_id`,`session_id`),
-  ADD KEY `session_id` (`session_id`);
 
 --
 -- Indexes for table `districts`
@@ -576,15 +398,6 @@ ALTER TABLE `provinces`
 ALTER TABLE `regions`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `region_code` (`region_code`);
-
---
--- Indexes for table `service_requests`
---
-ALTER TABLE `service_requests`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `client_id` (`client_id`),
-  ADD KEY `service_type_id` (`service_type_id`),
-  ADD KEY `assisted_by_id` (`assisted_by_id`);
 
 --
 -- Indexes for table `service_types`
@@ -630,13 +443,6 @@ ALTER TABLE `training_registrations`
   ADD KEY `attendance_status` (`attendance_status`);
 
 --
--- Indexes for table `training_sessions`
---
-ALTER TABLE `training_sessions`
-  ADD PRIMARY KEY (`id`),
-  ADD KEY `trainer_id` (`trainer_id`);
-
---
 -- Indexes for table `users`
 --
 ALTER TABLE `users`
@@ -647,24 +453,6 @@ ALTER TABLE `users`
 --
 -- AUTO_INCREMENT for dumped tables
 --
-
---
--- AUTO_INCREMENT for table `clients`
---
-ALTER TABLE `clients`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `client_notes`
---
-ALTER TABLE `client_notes`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT for table `client_training_sessions`
---
-ALTER TABLE `client_training_sessions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `districts`
@@ -682,7 +470,7 @@ ALTER TABLE `municipalities`
 -- AUTO_INCREMENT for table `regions`
 --
 ALTER TABLE `regions`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=19;
 
 --
 -- AUTO_INCREMENT for table `support_requests`
@@ -694,7 +482,7 @@ ALTER TABLE `support_requests`
 -- AUTO_INCREMENT for table `tech_support_requests`
 --
 ALTER TABLE `tech_support_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

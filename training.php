@@ -101,7 +101,8 @@ $past_events = [
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Event Training - DICT Client Management System</title>
+    <title>ILCDB</title>
+    <link rel="icon" type="image/x-icon" href="images/dict-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -117,7 +118,10 @@ $past_events = [
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <span class="text-xl font-bold">DICT Client Management System</span>
+                        <a href="http://localhost/phase2/admin/login.php">
+                            <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
+                        </a>
+                        <span class="text-xl font-bold">ILCDB Client Services Portal</span>
                     </div>
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
                         <a href="index.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Home</a>

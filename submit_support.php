@@ -97,11 +97,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if ($result === false) {
                 throw new Exception("Failed to create support request record");
-            }
-
-            // Success - store message in session and redirect
+            }            // Success - store message in session and redirect
             $_SESSION['success_message'] = "Your support request has been submitted successfully. Our team will contact you soon.";
-            header('Location: tech-support.php?status=success');
+            $client_name = urlencode($first_name . ' ' . $middle_initial . ' ' . $surname);
+            header('Location: tech-support.php?status=success&client_name=' . $client_name);
             exit();
         }
     } catch (Exception $e) {

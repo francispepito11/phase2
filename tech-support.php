@@ -21,12 +21,23 @@ unset($_SESSION['success_message']);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Technical Support - DICT Client Management System</title>
+    <title>ILCD</title>
+    <link rel="icon" type="image/x-icon" href="images/dict-logo.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
+        }
+        /* Satisfaction Modal Fix */
+        #satisfactionModal {
+            z-index: 9999;
+        }
+        #satisfactionModal .modal-content {
+            z-index: 10000;
+        }
+        #satisfactionModal .modal-backdrop {
+            z-index: 9998;
         }
     </style>
 </head>
@@ -37,7 +48,10 @@ unset($_SESSION['success_message']);
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <span class="text-xl font-bold">DICT Client Management System</span>
+                        <a href="http://localhost/phase2/admin/login.php">
+                            <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
+                        </a>
+                        <span class="text-xl font-bold">ILCDB Client Services Portal</span>
                     </div>
                     <div class="hidden md:ml-6 md:flex md:space-x-8">
                         <a href="index.php" class="border-transparent border-b-2 hover:border-gray-300 px-1 pt-1 text-sm font-medium">Home</a>
@@ -82,6 +96,35 @@ unset($_SESSION['success_message']);
         <div class="mb-6 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded-md" role="alert">
             <p class="font-bold">Success!</p>
             <p><?php echo !empty($success_message) ? $success_message : 'Your support request has been submitted successfully. Our team will contact you soon.'; ?></p>
+        </div>
+        <!-- Client Satisfaction Popup Modal -->                <div id="satisfactionModal" class="fixed inset-0 flex items-center justify-center z-50 hidden" style="z-index:9999;">
+            <div class="bg-white rounded-lg shadow-lg p-8 max-w-md w-full border border-blue-200 modal-content" style="z-index:10000;">
+                <h2 class="text-xl font-semibold mb-4 text-center text-blue-800">We Value Your Feedback!</h2>
+                <form id="satisfactionForm">
+                    <input type="hidden" id="supportRequestId" name="support_request_id" value="">
+                    <input type="hidden" id="clientNameFeedback" name="client_name" value="<?php echo isset($_GET['client_name']) ? htmlspecialchars($_GET['client_name']) : ''; ?>">
+                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-2 text-sm">How satisfied are you with our support?</label>
+                        <div class="flex justify-between space-x-2">
+                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-green-100 hover:bg-green-200 text-green-800 font-semibold" data-value="5">Very Satisfied</button>
+                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold" data-value="4">Satisfied</button>
+                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-semibold" data-value="3">Neutral</button>
+                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-orange-100 hover:bg-orange-200 text-orange-800 font-semibold" data-value="2">Dissatisfied</button>
+                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-red-100 hover:bg-red-200 text-red-800 font-semibold" data-value="1">Very Dissatisfied</button>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label for="satisfactionComment" class="block text-gray-700 mb-2 text-sm">Additional Comments (optional):</label>
+                        <textarea id="satisfactionComment" name="comment" rows="2" class="w-full border border-gray-300 rounded-md p-2"></textarea>
+                    </div>
+                    <div class="flex justify-end">
+                        <button type="button" id="closeSatisfactionModal" class="mr-2 px-4 py-2 bg-gray-200 rounded hover:bg-gray-300">Close</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">Submit</button>
+                    </div>
+                </form>
+                <div id="feedbackSuccessMsg" class="hidden mt-4 text-green-700 text-center font-semibold">Thank you for your feedback!</div>
+            </div>
+            <div class="fixed inset-0 bg-black opacity-40 modal-backdrop"></div>
         </div>
         <?php endif; ?>
 
@@ -270,6 +313,67 @@ unset($_SESSION['success_message']);
 
     <!-- JavaScript for Dynamic Dropdowns -->
     <script>
+        // Client Satisfaction Modal Logic
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.location.search.includes('status=success') || <?php echo !empty($success_message) ? 'true' : 'false'; ?>) {                // Get client name from URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+                const clientName = urlParams.get('client_name');
+                if (clientName) {
+                    document.getElementById('clientNameFeedback').value = decodeURIComponent(clientName);
+                }
+                setTimeout(function() {
+                    document.getElementById('satisfactionModal').classList.remove('hidden');
+                }, 1000);
+            }
+            // Handle satisfaction button selection
+            let selectedValue = null;
+            document.querySelectorAll('.satisfaction-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    selectedValue = this.getAttribute('data-value');
+                    document.querySelectorAll('.satisfaction-btn').forEach(b => b.classList.remove('ring', 'ring-2', 'ring-blue-500'));
+                    this.classList.add('ring', 'ring-2', 'ring-blue-500');
+                });
+            });
+            // Close modal
+            document.getElementById('closeSatisfactionModal').addEventListener('click', function() {
+                document.getElementById('satisfactionModal').classList.add('hidden');
+            });
+            // Handle form submit
+            document.getElementById('satisfactionForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                var comment = document.getElementById('satisfactionComment').value;
+                var supportRequestId = document.getElementById('supportRequestId').value;
+                var clientName = document.getElementById('clientNameFeedback').value;
+                if (!selectedValue) {
+                    alert('Please select your satisfaction rating.');
+                    return;
+                }
+                var formData = new FormData();
+                formData.append('rating', selectedValue);
+                formData.append('comment', comment);
+                formData.append('support_request_id', supportRequestId);
+                formData.append('client_name', clientName);
+                fetch('includes/save_feedback.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        document.getElementById('feedbackSuccessMsg').classList.remove('hidden');
+                        setTimeout(function() {
+                            document.getElementById('satisfactionModal').classList.add('hidden');
+                            document.getElementById('feedbackSuccessMsg').classList.add('hidden');
+                        }, 2000);
+                    } else {
+                        alert('Failed to save feedback: ' + (data.message || 'Unknown error'));
+                    }
+                })
+                .catch(() => {
+                    alert('Failed to save feedback.');
+                });
+            });
+        });
         document.addEventListener('DOMContentLoaded', function() {
             // Get reference to the dropdown elements
             const regionSelect = document.getElementById('region');
