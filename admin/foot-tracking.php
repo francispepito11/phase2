@@ -95,138 +95,155 @@ try {
     // Get foot traffic by age group and gender per region
     $age_gender_data = [];
     try {
-        // Fixed the query to use age >= 60 for seniors instead of age > 60
         $sql = "SELECT 
-                r.region_name, 
-                SUM(CASE WHEN age < 18 AND gender = 'Male' THEN 1 ELSE 0 END) as youth_male,
-                SUM(CASE WHEN age < 18 AND gender = 'Female' THEN 1 ELSE 0 END) as youth_female,
-                SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Male' THEN 1 ELSE 0 END) as adult_male,
-                SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Female' THEN 1 ELSE 0 END) as adult_female,
-                SUM(CASE WHEN age >= 60 AND gender = 'Male' THEN 1 ELSE 0 END) as senior_male,
-                SUM(CASE WHEN age >= 60 AND gender = 'Female' THEN 1 ELSE 0 END) as senior_female
-            FROM tech_support_requests tsr
-            LEFT JOIN regions r ON tsr.region_id = r.id
+                r.region_name,
+                c.gender,
+                CASE
+                    WHEN TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) < 15 THEN 'Under 15'
+                    WHEN TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) BETWEEN 15 AND 24 THEN '15-24'
+                    WHEN TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) BETWEEN 25 AND 59 THEN '25-59'
+                    ELSE '60 and above'
+                END as age_group,
+                COUNT(*) as count
+            FROM clients c
+            JOIN tech_support_requests tsr ON c.id = tsr.client_id
+            JOIN regions r ON c.region_id = r.id
             WHERE tsr.date_requested BETWEEN ? AND ?
-            GROUP BY r.region_name 
-            ORDER BY r.region_name";
-        
+            AND tsr.support_type IN ('Use of ICT Equipment', 'Lending of ICT Equipment', 'Use of Office Facility', 'Use of Space, ICT Equipment & Internet Connectivity')
+            GROUP BY r.region_name, c.gender, age_group
+            ORDER BY r.region_name, c.gender, age_group";
+
         $stmt = $conn->prepare($sql);
         $stmt->bind_param('ss', $start_date, $end_date);
         $stmt->execute();
         $result = $stmt->get_result();
-        
+
         while ($row = $result->fetch_assoc()) {
             $age_gender_data[] = $row;
         }
-        
         $stmt->close();
-        
-        // Get monthly counts of male and female clients per region (without support type)
-        $monthly_gender_data = [];
-        $sql = "SELECT 
-            r.region_name, 
-            SUM(CASE WHEN gender = 'Male' THEN 1 ELSE 0 END) as male_count,
-            SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) as female_count
-        FROM tech_support_requests tsr
-        LEFT JOIN regions r ON tsr.region_id = r.id
-        WHERE tsr.date_requested BETWEEN ? AND ? 
-        GROUP BY r.region_name
-        ORDER BY r.region_name";
-
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param('ss', $start_date, $end_date);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        
-        while ($row = $result->fetch_assoc()) {
-            $monthly_gender_data[] = $row;
-        }
-        
-        $stmt->close();
-        
-        // Get monthly data by region, age group, and gender
-        $monthly_age_gender_data = [];
-        $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-        
-        foreach ($months as $month_index => $month_name) {
-            $month_num = $month_index + 1;
-            $month_start = sprintf('%04d-%02d-01', $current_year, $month_num);
-            $month_end = date('Y-m-t', strtotime($month_start));
-            
-            // Skip months not in the current semester
-            if (($current_semester == 1 && $month_num > 6) || ($current_semester == 2 && $month_num < 7)) {
-                continue;
-            }
-            
-            $sql = "SELECT 
-                r.region_name,
-                SUM(CASE WHEN age < 18 AND gender = 'Male' THEN 1 ELSE 0 END) as youth_male,
-                SUM(CASE WHEN age < 18 AND gender = 'Female' THEN 1 ELSE 0 END) as youth_female,
-                SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Male' THEN 1 ELSE 0 END) as adult_male,
-                SUM(CASE WHEN age BETWEEN 18 AND 59 AND gender = 'Female' THEN 1 ELSE 0 END) as adult_female,
-                SUM(CASE WHEN age >= 60 AND gender = 'Male' THEN 1 ELSE 0 END) as senior_male,
-                SUM(CASE WHEN age >= 60 AND gender = 'Female' THEN 1 ELSE 0 END) as senior_female
-            FROM tech_support_requests tsr
-            LEFT JOIN regions r ON tsr.region_id = r.id
-            WHERE tsr.date_requested BETWEEN ? AND ?
-            GROUP BY r.region_name
-            ORDER BY r.region_name";
-            
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param('ss', $month_start, $month_end);
-            $stmt->execute();
-            $result = $stmt->get_result();
-            
-            $monthly_age_gender_data[$month_name] = [];
-            while ($row = $result->fetch_assoc()) {
-                $monthly_age_gender_data[$month_name][$row['region_name']] = $row;
-            }
-            
-            $stmt->close();
-        }
-        
     } catch (Exception $e) {
-        $error_message = "Error: " . $e->getMessage();
+        error_log("Error getting age and gender data: " . $e->getMessage());
+        // Handle the error appropriately
     }
     
-    // Get comparison with previous semester
-    $prev_semester = $current_semester == 1 ? 2 : 1;
-    $prev_year = $current_year;
-    if ($current_semester == 1) {
-        $prev_year--;
-    }
+    // Get monthly counts of male and female clients per region (without support type)
+    $monthly_gender_data = [];
+    $sql = "SELECT 
+        r.region_name, 
+        SUM(CASE WHEN gender = 'Male' THEN 1 ELSE 0 END) as male_count,
+        SUM(CASE WHEN gender = 'Female' THEN 1 ELSE 0 END) as female_count
+    FROM tech_support_requests tsr
+    LEFT JOIN regions r ON tsr.region_id = r.id
+    WHERE tsr.date_requested BETWEEN ? AND ? 
+    GROUP BY r.region_name
+    ORDER BY r.region_name";
 
-    if ($prev_semester == 1) {
-        $prev_start_date = sprintf('%04d-01-01', $prev_year);
-        $prev_end_date = sprintf('%04d-06-30', $prev_year);
-        $prev_semester_name = "First Semester (January-June) " . $prev_year;
-    } else {
-        $prev_start_date = sprintf('%04d-07-01', $prev_year);
-        $prev_end_date = sprintf('%04d-12-31', $prev_year);
-        $prev_semester_name = "Second Semester (July-December) " . $prev_year;
-    }
-    
-    $sql = "SELECT COUNT(*) as total 
-            FROM tech_support_requests 
-            WHERE date_requested BETWEEN ? AND ? 
-            AND support_type IN ('Use of ICT Equipment', 'Lending of ICT Equipment', 'Use of Office Facility', 'Use of Space, ICT Equipment & Internet Connectivity')";
-    
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ss', $prev_start_date, $prev_end_date);
+    $stmt->bind_param('ss', $start_date, $end_date);
     $stmt->execute();
     $result = $stmt->get_result();
-    $prev_month_total = $result->fetch_assoc()['total'];
+    
+    while ($row = $result->fetch_assoc()) {
+        $monthly_gender_data[] = $row;
+    }
+    
     $stmt->close();
     
-    // Calculate percentage change
-    if ($prev_month_total > 0) {
-        $percent_change = (($total_foot_traffic - $prev_month_total) / $prev_month_total) * 100;
-    } else {
-        $percent_change = $total_foot_traffic > 0 ? 100 : 0;
+    // Get monthly data by region, age group, and gender
+    $monthly_age_gender_data = [];
+    $months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    
+    foreach ($months as $month_index => $month_name) {
+        $month_num = $month_index + 1;
+        $month_start = sprintf('%04d-%02d-01', $current_year, $month_num);
+        $month_end = date('Y-m-t', strtotime($month_start));
+        
+        // Skip months not in the current semester
+        if (($current_semester == 1 && $month_num > 6) || ($current_semester == 2 && $month_num < 7)) {
+            continue;
+        }
+          $sql = "SELECT 
+            r.region_name,
+            c.gender,
+            CASE
+                WHEN TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) < 15 THEN 'Under 15'
+                WHEN TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) BETWEEN 15 AND 24 THEN '15-24'
+                WHEN TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) BETWEEN 25 AND 59 THEN '25-59'
+                ELSE '60 and above'
+            END as age_group,
+            COUNT(*) as count
+        FROM tech_support_requests tsr
+        LEFT JOIN regions r ON tsr.region_id = r.id
+        WHERE tsr.date_requested BETWEEN ? AND ?
+        GROUP BY r.region_name
+        ORDER BY r.region_name";
+        
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('ss', $month_start, $month_end);
+        $stmt->execute();
+        $result = $stmt->get_result();
+          $monthly_age_gender_data[$month_name] = [];
+        while ($row = $result->fetch_assoc()) {
+            if (!isset($monthly_age_gender_data[$month_name][$row['region_name']])) {
+                $monthly_age_gender_data[$month_name][$row['region_name']] = [
+                    'Male' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0],
+                    'Female' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0]
+                ];
+            }
+            
+            // Map the SQL results to our new structure
+            $age_group = '';
+            $age = TIMESTAMPDIFF(YEAR, $row['birthdate'], CURDATE());
+            if ($age < 15) $age_group = 'Under 15';
+            else if ($age >= 15 && $age <= 24) $age_group = '15-24';
+            else if ($age >= 25 && $age <= 59) $age_group = '25-59';
+            else $age_group = '60 and above';
+            
+            $monthly_age_gender_data[$month_name][$row['region_name']][$row['gender']][$age_group] = $row['count'];
+        }
+        
+        $stmt->close();
     }
     
 } catch (Exception $e) {
     $error_message = "Error: " . $e->getMessage();
+}
+
+// Get comparison with previous semester
+$prev_semester = $current_semester == 1 ? 2 : 1;
+$prev_year = $current_year;
+if ($current_semester == 1) {
+    $prev_year--;
+}
+
+if ($prev_semester == 1) {
+    $prev_start_date = sprintf('%04d-01-01', $prev_year);
+    $prev_end_date = sprintf('%04d-06-30', $prev_year);
+    $prev_semester_name = "First Semester (January-June) " . $prev_year;
+} else {
+    $prev_start_date = sprintf('%04d-07-01', $prev_year);
+    $prev_end_date = sprintf('%04d-12-31', $prev_year);
+    $prev_semester_name = "Second Semester (July-December) " . $prev_year;
+}
+
+$sql = "SELECT COUNT(*) as total 
+        FROM tech_support_requests 
+        WHERE date_requested BETWEEN ? AND ? 
+        AND support_type IN ('Use of ICT Equipment', 'Lending of ICT Equipment', 'Use of Office Facility', 'Use of Space, ICT Equipment & Internet Connectivity')";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('ss', $prev_start_date, $prev_end_date);
+$stmt->execute();
+$result = $stmt->get_result();
+$prev_month_total = $result->fetch_assoc()['total'];
+$stmt->close();
+
+// Calculate percentage change
+if ($prev_month_total > 0) {
+    $percent_change = (($total_foot_traffic - $prev_month_total) / $prev_month_total) * 100;
+} else {
+    $percent_change = $total_foot_traffic > 0 ? 100 : 0;
 }
 
 // Get semester name
@@ -312,16 +329,62 @@ $page_title = "Foot Traffic Tracking";
             border: 1px solid #e9ecef;
         }
         
+        /* Age and Gender Table Styles */
+        .table-bordered {
+            border: 1px solid #dee2e6;
+        }
+        
+        .table-bordered th,
+        .table-bordered td {
+            border: 1px solid #dee2e6;
+        }
+        
+        .table thead th {
+            vertical-align: middle;
+            background-color: #f8f9fa;
+        }
+        
         .region-column {
             position: sticky;
             left: 0;
             background-color: white;
-            z-index: 10;
-            text-align: left !important;
+            z-index: 1;
+            min-width: 200px;
         }
         
         .age-group-header {
             background-color: #f1f5f9 !important;
+            font-size: 0.875rem;
+            padding: 0.5rem;
+        }
+        
+        .table-responsive {
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        
+        /* Hover effect */
+        .table tbody tr:hover {
+            background-color: rgba(0,0,0,.075);
+        }
+        
+        /* Sticky header */
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background-color: #f8f9fa;
+            z-index: 1;
+        }
+        
+        /* Fixed layout for better performance */
+        .table {
+            table-layout: fixed;
+        }
+        
+        /* Responsive cell widths */
+        .table th:not(.region-column),
+        .table td:not(.region-column) {
+            width: calc((100% - 200px) / 8);
         }
         
         /* Chart Container */
@@ -495,40 +558,55 @@ $page_title = "Foot Traffic Tracking";
             </div>
             <div class="card-body">
                 <div class="table-container">
-                    <table class="table table-striped table-hover">
-                        <thead>
+                    <table class="table table-striped table-hover">                        <thead>
                             <tr>
                                 <th rowspan="2" class="region-column">Region</th>
-                                <th colspan="2" class="age-group-header">Youth(&lt;18)</th>
-                                <th colspan="2" class="age-group-header">Adults(18-59)</th>
-                                <th colspan="2" class="age-group-header">Seniors(≥60)</th>
+                                <th colspan="4" class="text-center">Male</th>
+                                <th colspan="4" class="text-center">Female</th>
                             </tr>
                             <tr>
-                                <th>Male</th>
-                                <th>Female</th>
-                                <th>Male</th>
-                                <th>Female</th>
-                                <th>Male</th>
-                                <th>Female</th>
+                                <th class="age-group-header">Under 15</th>
+                                <th class="age-group-header">15-24</th>
+                                <th class="age-group-header">25-59</th>
+                                <th class="age-group-header">60+</th>
+                                <th class="age-group-header">Under 15</th>
+                                <th class="age-group-header">15-24</th>
+                                <th class="age-group-header">25-59</th>
+                                <th class="age-group-header">60+</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php if (empty($age_gender_data)): ?>
-                            <tr>
-                                <td colspan="7" class="text-center">No data available for this semester.</td>
+                            <?php if (empty($age_gender_data)): ?>                            <tr>
+                                <td colspan="9" class="text-center">No data available for this semester.</td>
                             </tr>
                             <?php else: ?>
-                                <?php foreach ($age_gender_data as $item): ?>
+                            <?php
+                            $regions = [];
+                            foreach ($age_gender_data as $data) {
+                                if (!isset($regions[$data['region_name']])) {
+                                    $regions[$data['region_name']] = [
+                                        'Male' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0],
+                                        'Female' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0]
+                                    ];
+                                }
+                                $regions[$data['region_name']][$data['gender']][$data['age_group']] = $data['count'];
+                            }
+
+                            foreach ($regions as $region => $data): ?>
                                 <tr>
-                                    <td class="region-column"><?php echo htmlspecialchars($item['region_name']); ?></td>
-                                    <td><?php echo $item['youth_male']; ?></td>
-                                    <td><?php echo $item['youth_female']; ?></td>
-                                    <td><?php echo $item['adult_male']; ?></td>
-                                    <td><?php echo $item['adult_female']; ?></td>
-                                    <td><?php echo $item['senior_male']; ?></td>
-                                    <td><?php echo $item['senior_female']; ?></td>
+                                    <td class="region-column"><?php echo htmlspecialchars($region); ?></td>
+                                    <!-- Male age groups -->
+                                    <td><?php echo $data['Male']['Under 15'] ?? 0; ?></td>
+                                    <td><?php echo $data['Male']['15-24'] ?? 0; ?></td>
+                                    <td><?php echo $data['Male']['25-59'] ?? 0; ?></td>
+                                    <td><?php echo $data['Male']['60 and above'] ?? 0; ?></td>
+                                    <!-- Female age groups -->
+                                    <td><?php echo $data['Female']['Under 15'] ?? 0; ?></td>
+                                    <td><?php echo $data['Female']['15-24'] ?? 0; ?></td>
+                                    <td><?php echo $data['Female']['25-59'] ?? 0; ?></td>
+                                    <td><?php echo $data['Female']['60 and above'] ?? 0; ?></td>
                                 </tr>
-                                <?php endforeach; ?>
+                            <?php endforeach; ?>
                             <?php endif; ?>
                         </tbody>
                     </table>
@@ -585,30 +663,49 @@ $page_title = "Foot Traffic Tracking";
                                 ?>
                             </tr>
                         </thead>
-                        <tbody>
-                            <?php if (empty($age_gender_data)): ?>
+                        <tbody>                            <?php if (empty($age_gender_data)): ?>
                             <tr>
-                                <td colspan="<?php echo 7 + (count($semester_months) * 2); ?>" class="text-center">No data available for this semester.</td>
+                                <td colspan="9" class="text-center">No data available for this semester.</td>
                             </tr>
                             <?php else: ?>
-                                <?php foreach ($age_gender_data as $item): ?>
+                            <?php
+                            $regions = [];
+                            foreach ($age_gender_data as $data) {
+                                if (!isset($regions[$data['region_name']])) {
+                                    $regions[$data['region_name']] = [
+                                        'Male' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0],
+                                        'Female' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0]
+                                    ];
+                                }
+                                $regions[$data['region_name']][$data['gender']][$data['age_group']] = $data['count'];
+                            }
+
+                            foreach ($regions as $region => $data): ?>
                                 <tr>
-                                    <td class="region-column"><?php echo htmlspecialchars($item['region_name']); ?></td>
-                                    <td><?php echo $item['youth_male']; ?></td>
-                                    <td><?php echo $item['youth_female']; ?></td>
-                                    <td><?php echo $item['adult_male']; ?></td>
-                                    <td><?php echo $item['adult_female']; ?></td>
-                                    <td><?php echo $item['senior_male']; ?></td>
-                                    <td><?php echo $item['senior_female']; ?></td>
-                                    
-                                    <?php foreach ($semester_months as $month): ?>
+                                    <td class="region-column"><?php echo htmlspecialchars($region); ?></td>
+                                    <!-- Male age groups -->
+                                    <td><?php echo $data['Male']['Under 15'] ?? 0; ?></td>
+                                    <td><?php echo $data['Male']['15-24'] ?? 0; ?></td>
+                                    <td><?php echo $data['Male']['25-59'] ?? 0; ?></td>
+                                    <td><?php echo $data['Male']['60 and above'] ?? 0; ?></td>
+                                    <!-- Female age groups -->
+                                    <td><?php echo $data['Female']['Under 15'] ?? 0; ?></td>
+                                    <td><?php echo $data['Female']['15-24'] ?? 0; ?></td>
+                                    <td><?php echo $data['Female']['25-59'] ?? 0; ?></td>
+                                    <td><?php echo $data['Female']['60 and above'] ?? 0; ?></td>
+                                      <?php foreach ($semester_months as $month): ?>
                                         <?php 
-                                        $month_data = isset($monthly_age_gender_data[$month][$item['region_name']]) 
-                                            ? $monthly_age_gender_data[$month][$item['region_name']] 
-                                            : ['youth_male' => 0, 'youth_female' => 0, 'adult_male' => 0, 'adult_female' => 0, 'senior_male' => 0, 'senior_female' => 0];
+                                        $month_data = isset($monthly_age_gender_data[$month][$region]) 
+                                            ? $monthly_age_gender_data[$month][$region] 
+                                            : [
+                                                'Male' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0],
+                                                'Female' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0]
+                                            ];
                                         
-                                        $male_total = $month_data['youth_male'] + $month_data['adult_male'] + $month_data['senior_male'];
-                                        $female_total = $month_data['youth_female'] + $month_data['adult_female'] + $month_data['senior_female'];
+                                        $male_total = $month_data['Male']['Under 15'] + $month_data['Male']['15-24'] + 
+                                                     $month_data['Male']['25-59'] + $month_data['Male']['60 and above'];
+                                        $female_total = $month_data['Female']['Under 15'] + $month_data['Female']['15-24'] + 
+                                                      $month_data['Female']['25-59'] + $month_data['Female']['60 and above'];
                                         ?>
                                         <td><?php echo $male_total; ?></td>
                                         <td><?php echo $female_total; ?></td>
@@ -654,6 +751,66 @@ $page_title = "Foot Traffic Tracking";
                                 </tr>
                                 <?php endforeach; ?>
                             <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Foot Traffic by Age Group and Gender per Region -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Foot Traffic by Age Group and Gender per Region</h5>
+                <p class="text-muted small mb-0"><?php echo $semester_name; ?></p>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th rowspan="2" class="region-column">Region</th>
+                                <th colspan="4" class="text-center">Male</th>
+                                <th colspan="4" class="text-center">Female</th>
+                            </tr>
+                            <tr>
+                                <th class="age-group-header">Under 15</th>
+                                <th class="age-group-header">15-24</th>
+                                <th class="age-group-header">25-59</th>
+                                <th class="age-group-header">60+</th>
+                                <th class="age-group-header">Under 15</th>
+                                <th class="age-group-header">15-24</th>
+                                <th class="age-group-header">25-59</th>
+                                <th class="age-group-header">60+</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php
+                            $regions = [];
+                            foreach ($age_gender_data as $data) {
+                                if (!isset($regions[$data['region_name']])) {
+                                    $regions[$data['region_name']] = [
+                                        'Male' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0],
+                                        'Female' => ['Under 15' => 0, '15-24' => 0, '25-59' => 0, '60 and above' => 0]
+                                    ];
+                                }
+                                $regions[$data['region_name']][$data['gender']][$data['age_group']] = $data['count'];
+                            }
+
+                            foreach ($regions as $region => $data): ?>
+                                <tr>
+                                    <td class="region-column"><?php echo htmlspecialchars($region); ?></td>
+                                    <!-- Male age groups -->
+                                    <td><?php echo $data['Male']['Under 15']; ?></td>
+                                    <td><?php echo $data['Male']['15-24']; ?></td>
+                                    <td><?php echo $data['Male']['25-59']; ?></td>
+                                    <td><?php echo $data['Male']['60 and above']; ?></td>
+                                    <!-- Female age groups -->
+                                    <td><?php echo $data['Female']['Under 15']; ?></td>
+                                    <td><?php echo $data['Female']['15-24']; ?></td>
+                                    <td><?php echo $data['Female']['25-59']; ?></td>
+                                    <td><?php echo $data['Female']['60 and above']; ?></td>
+                                </tr>
+                            <?php endforeach; ?>
                         </tbody>
                     </table>
                 </div>
