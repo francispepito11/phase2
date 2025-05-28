@@ -118,7 +118,7 @@ $past_events = [
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="http://localhost/phase2/admin/login.php">
+                        <a href="http://localhost/phase2/">
                             <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
                         </a>
                         <span class="text-xl font-bold">ILCDB Client Services Portal</span>
@@ -324,11 +324,11 @@ $past_events = [
     </div>
 
     <!-- Footer -->
-    <footer class="bg-blue-800 text-white">
+   <footer class="bg-blue-800 text-white">
         <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div>
-                    <h3 class="text-lg font-semibold mb-4">DICT Client Management System</h3>
+                    <h3 class="text-lg font-semibold mb-4">ILCDB Client Services Portal</h3>
                     <p class="text-sm text-blue-100">
                         Providing technical support, services, and training to government agencies and the public.
                     </p>
@@ -337,7 +337,6 @@ $past_events = [
                     <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
                     <ul class="space-y-2 text-sm">
                         <li><a href="index.php" class="text-blue-100 hover:text-white">Home</a></li>
-                        <li><a href="services_provided.php" class="text-blue-100 hover:text-white">Services</a></li>
                         <li><a href="training.php" class="text-blue-100 hover:text-white">Training</a></li>
                         <li><a href="tech-support.php" class="text-blue-100 hover:text-white">Tech Support</a></li>
                     </ul>
@@ -345,10 +344,10 @@ $past_events = [
                 <div>
                     <h3 class="text-lg font-semibold mb-4">Contact Information</h3>
                     <address class="text-sm text-blue-100 not-italic">
-                        <p>Department of Information and Communications Technology</p>
-                        <p>C.P. Garcia Avenue, Diliman, Quezon City</p>
-                        <p>Email: info@dict.gov.ph</p>
-                        <p>Phone: (02) 8920-0101</p>
+                        <p>DICT IX BASULTA</p>
+                        <p>CDICT Region IX BASULTA Zamboanga City, Zamboanga City, Philippines</p>
+                        <p>Email: region9basulta@dict.gov.ph</p>
+                        <p>Phone: (062) 991 2742</p>
                     </address>
                 </div>
             </div>

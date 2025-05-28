@@ -48,7 +48,7 @@ unset($_SESSION['success_message']);
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <div class="flex-shrink-0 flex items-center">
-                        <a href="http://localhost/phase2/admin/login.php">
+                        <a href="http://localhost/phase2/">
                             <img src="images/dict-logo.png" alt="DICT Logo" class="h-10 w-auto mr-3">
                         </a>
                         <span class="text-xl font-bold">ILCDB Client Services Portal</span>
@@ -239,17 +239,25 @@ unset($_SESSION['success_message']);
                                 <select id="agency" name="agency" required 
                                     class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
                                     <option value="">Select Sector</option>
-                                    <option value="DBM" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DBM') ? 'selected' : ''; ?>>DBM</option>
-                                    <option value="DILG" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DILG') ? 'selected' : ''; ?>>DILG</option>
-                                    <option value="DEPED" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DEPED') ? 'selected' : ''; ?>>DEPED</option>
-                                    <option value="CHED" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'CHED') ? 'selected' : ''; ?>>CHED</option>
-                                    <option value="DSWD" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DSWD') ? 'selected' : ''; ?>>DSWD</option>
-                                    <option value="DOLE" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOLE') ? 'selected' : ''; ?>>DOLE</option>
-                                    <option value="DOH" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOH') ? 'selected' : ''; ?>>DOH</option>
-                                    <option value="DOF" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOF') ? 'selected' : ''; ?>>DOF</option>
-                                    <option value="DTI" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DTI') ? 'selected' : ''; ?>>DTI</option>
-                                    <option value="DA" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DA') ? 'selected' : ''; ?>>DA</option>
-                                    <option value="DOE" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'DOE') ? 'selected' : ''; ?>>DOE</option>
+                                    <option value="Student" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Student') ? 'selected' : ''; ?>>Student</option>
+                                    <option value="Youth" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Youth') ? 'selected' : ''; ?>>Youth</option>
+                                    <option value="Seniors" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Seniors') ? 'selected' : ''; ?>>Seniors</option>
+                                    <option value="Homemaker" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Homemaker') ? 'selected' : ''; ?>>Homemaker</option>
+                                    <option value="PWD" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'PWD') ? 'selected' : ''; ?>>PWD</option>
+                                    <option value="IPs" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'IPs') ? 'selected' : ''; ?>>IP's</option>
+                                    <option value="Out of School Youth" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Out of School Youth') ? 'selected' : ''; ?>>Out of School Youth</option>
+                                    <option value="Unemployed" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Unemployed') ? 'selected' : ''; ?>>Unemployed</option>
+                                    <option value="OFW" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'OFW') ? 'selected' : ''; ?>>OFW</option>
+                                    <option value="Farmers" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Farmers') ? 'selected' : ''; ?>>Farmers</option>
+                                    <option value="Fisherman" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Fisherman') ? 'selected' : ''; ?>>Fisherman</option>
+                                    <option value="Vendors" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Vendors') ? 'selected' : ''; ?>>Vendors</option>
+                                    <option value="Business Owner" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Business Owner') ? 'selected' : ''; ?>>Business Owner</option>
+                                    <option value="Teacher/Educator" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Teacher/Educator') ? 'selected' : ''; ?>>Teacher/Educator</option>
+                                    <option value="Healthcare Worker" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Healthcare Worker') ? 'selected' : ''; ?>>Healthcare Worker</option>
+                                    <option value="Government Employee" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Government Employee') ? 'selected' : ''; ?>>Government Employee</option>
+                                    <option value="Skilled Laborers" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Skilled Laborers') ? 'selected' : ''; ?>>Skilled Laborers</option>
+                                    <option value="Service Worker" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Service Worker') ? 'selected' : ''; ?>>Service Worker</option>
+                                    <option value="Transportation Worker" <?php echo (isset($form_data['agency']) && $form_data['agency'] == 'Transportation Worker') ? 'selected' : ''; ?>>Transportation Worker</option>
                                 </select>
                             </div>
                         </div>
@@ -575,5 +583,38 @@ unset($_SESSION['success_message']);
             }
         });
     </script>
+
+     <footer class="bg-blue-800 text-white">
+        <div class="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">ILCDB Client Services Portal</h3>
+                    <p class="text-sm text-blue-100">
+                        Providing technical support, services, and training to government agencies and the public.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Quick Links</h3>
+                    <ul class="space-y-2 text-sm">
+                        <li><a href="index.php" class="text-blue-100 hover:text-white">Home</a></li>
+                        <li><a href="training.php" class="text-blue-100 hover:text-white">Training</a></li>
+                        <li><a href="tech-support.php" class="text-blue-100 hover:text-white">Tech Support</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Contact Information</h3>
+                    <address class="text-sm text-blue-100 not-italic">
+                        <p>DICT IX BASULTA</p>
+                        <p>CDICT Region IX BASULTA Zamboanga City, Zamboanga City, Philippines</p>
+                        <p>Email: region9basulta@dict.gov.ph</p>
+                        <p>Phone: (062) 991 2742</p>
+                    </address>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-blue-700 text-center text-sm text-blue-100">
+                <p>&copy; <?php echo date('Y'); ?> Department of Information and Communications Technology. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
 </body>
 </html>

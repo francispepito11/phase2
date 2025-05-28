@@ -14,52 +14,117 @@ include_once '../includes/db_connect.php';
 // Set page title
 $page_title = "Dashboard";
 
-// Fetch service requests from the database
-$serviceRequests = [];
-$query = "SELECT tsr.*, 
-          r.region_name, p.province_name, d.district_name, m.municipality_name
-          FROM tech_support_requests tsr
-          LEFT JOIN regions r ON tsr.region_id = r.id
-          LEFT JOIN provinces p ON tsr.province_id = p.id
-          LEFT JOIN districts d ON tsr.district_id = d.id
-          LEFT JOIN municipalities m ON tsr.municipality_id = m.id
-          ORDER BY tsr.date_requested DESC
-          LIMIT 10"; // Limit to 10 most recent requests
+// Set up available years (2021 to current year)
+$currentYear = date('Y');
+$availableYears = range($currentYear, 2021);
 
-$result = $conn->query($query);
-
-if ($result && $result->num_rows > 0) {
-    while ($row = $result->fetch_assoc()) {
-        $serviceRequests[] = [
-            'id' => $row['id'],
-            'client_name' => $row['client_name'],
-            'agency' => $row['agency'],
-            'region' => $row['region_name'] ?? 'Unknown',
-            'province' => $row['province_name'] ?? 'Unknown',
-            'district' => $row['district_name'] ?? 'Unknown',
-            'municipality' => $row['municipality_name'] ?? 'Unknown',
-            'service_type' => $row['support_type'],
-            'description' => $row['issue_description'],
-            'date_requested' => date('Y-m-d', strtotime($row['date_requested'])),
-            'date_assisted' => $row['date_assisted'] ? date('Y-m-d', strtotime($row['date_assisted'])) : '',
-            'date_resolved' => $row['date_resolved'] ? date('Y-m-d', strtotime($row['date_resolved'])) : '',
-            'assisted_by' => 'Staff', // This would ideally come from users table based on assisted_by_id
-            'status' => $row['status'],
-            'remarks' => $row['remarks']
-        ];
+// Get years that have data
+$yearsWithDataQuery = "SELECT DISTINCT YEAR(date_requested) as year 
+                      FROM tech_support_requests 
+                      ORDER BY year DESC";
+$yearsWithDataResult = $conn->query($yearsWithDataQuery);
+$yearsWithData = [];
+if ($yearsWithDataResult && $yearsWithDataResult->num_rows > 0) {
+    while ($row = $yearsWithDataResult->fetch_assoc()) {
+        $yearsWithData[] = (int)$row['year'];
     }
 }
 
+// Set selected year (default to current year if not specified)
+$selectedYear = isset($_GET['year']) ? (int)$_GET['year'] : date('Y');
+if (!in_array($selectedYear, $availableYears) && !empty($availableYears)) {
+    $selectedYear = $availableYears[0];
+}
+
+// Fetch unique service types from tech_support_requests table
+$serviceTypesQuery = "SELECT DISTINCT support_type FROM tech_support_requests ORDER BY support_type";
+$serviceTypesResult = $conn->query($serviceTypesQuery);
+$serviceTypes = [];
+if ($serviceTypesResult && $serviceTypesResult->num_rows > 0) {
+    while ($row = $serviceTypesResult->fetch_assoc()) {
+        $serviceTypes[] = $row['support_type'];
+    }
+}
+
+// Fetch first semester (January to June) service summary
+$firstSemesterQuery = "SELECT 
+    support_type,
+    COUNT(*) as total_requests,
+    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
+    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
+FROM tech_support_requests 
+WHERE YEAR(date_requested) = ?
+AND MONTH(date_requested) BETWEEN 1 AND 6
+GROUP BY support_type
+ORDER BY total_requests DESC";
+
+$stmt = $conn->prepare($firstSemesterQuery);
+$stmt->bind_param("i", $selectedYear);
+$stmt->execute();
+$firstSemesterResult = $stmt->get_result();
+$firstSemesterSummary = [];
+if ($firstSemesterResult && $firstSemesterResult->num_rows > 0) {
+    while ($row = $firstSemesterResult->fetch_assoc()) {
+        $firstSemesterSummary[$row['support_type']] = $row;
+    }
+}
+
+// Fetch second semester (July to December) service summary
+$secondSemesterQuery = "SELECT 
+    support_type,
+    COUNT(*) as total_requests,
+    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
+    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
+FROM tech_support_requests 
+WHERE YEAR(date_requested) = ?
+AND MONTH(date_requested) BETWEEN 7 AND 12
+GROUP BY support_type
+ORDER BY total_requests DESC";
+
+$stmt = $conn->prepare($secondSemesterQuery);
+$stmt->bind_param("i", $selectedYear);
+$stmt->execute();
+$secondSemesterResult = $stmt->get_result();
+$secondSemesterSummary = [];
+if ($secondSemesterResult && $secondSemesterResult->num_rows > 0) {
+    while ($row = $secondSemesterResult->fetch_assoc()) {
+        $secondSemesterSummary[$row['support_type']] = $row;
+    }
+}
+
+// Get total requests for each semester
+$semesterTotalsQuery = "SELECT 
+    CASE 
+        WHEN MONTH(date_requested) BETWEEN 1 AND 6 THEN '1st Semester'
+        ELSE '2nd Semester'
+    END as semester,
+    COUNT(*) as total_requests,
+    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved,
+    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
+FROM tech_support_requests
+WHERE YEAR(date_requested) = $selectedYear
+GROUP BY 
+    CASE 
+        WHEN MONTH(date_requested) BETWEEN 1 AND 6 THEN '1st Semester'
+        ELSE '2nd Semester'
+    END";
+
 // Get statistics
-// Use SQL COUNT for more efficient statistics
 $statsQuery = "SELECT 
     COUNT(*) as total,
     SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
     SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
     SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved
-FROM tech_support_requests";
+FROM tech_support_requests
+WHERE YEAR(date_requested) = ?";
 
-$statsResult = $conn->query($statsQuery);
+$stmt = $conn->prepare($statsQuery);
+$stmt->bind_param("i", $selectedYear);
+$stmt->execute();
+$statsResult = $stmt->get_result();
 if ($statsResult && $statsResult->num_rows > 0) {
     $stats = $statsResult->fetch_assoc();
     $totalRequests = $stats['total'];
@@ -67,18 +132,65 @@ if ($statsResult && $statsResult->num_rows > 0) {
     $inProgressRequests = $stats['in_progress'];
     $resolvedRequests = $stats['resolved'];
 } else {
-    // Fallback to PHP counting if SQL query fails
-    $totalRequests = count($serviceRequests);
-    $pendingRequests = count(array_filter($serviceRequests, function($req) {
-        return $req['status'] === 'Pending';
-    }));
-    $inProgressRequests = count(array_filter($serviceRequests, function($req) {
-        return $req['status'] === 'In Progress';
-    }));
-    $resolvedRequests = count(array_filter($serviceRequests, function($req) {
-        return $req['status'] === 'Resolved';
-    }));
+    $totalRequests = 0;
+    $pendingRequests = 0;
+    $inProgressRequests = 0;
+    $resolvedRequests = 0;
 }
+
+// Get monthly trends data for line chart
+$monthlyTrendsQuery = "SELECT 
+    MONTH(date_requested) as month,
+    COUNT(*) as total_requests,
+    SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending,
+    SUM(CASE WHEN status = 'In Progress' THEN 1 ELSE 0 END) as in_progress,
+    SUM(CASE WHEN status = 'Resolved' THEN 1 ELSE 0 END) as resolved
+FROM tech_support_requests
+WHERE YEAR(date_requested) = ?
+GROUP BY MONTH(date_requested)
+ORDER BY MONTH(date_requested)";
+
+$stmt = $conn->prepare($monthlyTrendsQuery);
+$stmt->bind_param("i", $selectedYear);
+$stmt->execute();
+$monthlyTrendsResult = $stmt->get_result();
+$monthlyData = array_fill(1, 12, ['total' => 0, 'pending' => 0, 'in_progress' => 0, 'resolved' => 0]);
+
+if ($monthlyTrendsResult && $monthlyTrendsResult->num_rows > 0) {
+    while ($row = $monthlyTrendsResult->fetch_assoc()) {
+        $monthlyData[$row['month']] = [
+            'total' => (int)$row['total_requests'],
+            'pending' => (int)$row['pending'],
+            'in_progress' => (int)$row['in_progress'],
+            'resolved' => (int)$row['resolved']
+        ];
+    }
+}
+
+// Get service type distribution data for chart
+$serviceDistributionQuery = "SELECT 
+    support_type, 
+    COUNT(*) as request_count,
+    ROUND((COUNT(*) * 100.0) / (SELECT COUNT(*) FROM tech_support_requests WHERE YEAR(date_requested) = $selectedYear), 1) as percentage
+FROM tech_support_requests
+WHERE YEAR(date_requested) = $selectedYear
+GROUP BY support_type
+ORDER BY request_count DESC";
+
+$serviceDistribution = $conn->query($serviceDistributionQuery);
+
+// Get regional distribution data
+$regionalDistributionQuery = "SELECT 
+    c.region,
+    COUNT(*) as request_count,
+    ROUND((COUNT(*) * 100.0) / (SELECT COUNT(*) FROM tech_support_requests WHERE YEAR(date_requested) = $selectedYear), 1) as percentage
+FROM tech_support_requests tsr
+JOIN clients c ON tsr.client_id = c.id
+WHERE YEAR(tsr.date_requested) = $selectedYear
+GROUP BY c.region
+ORDER BY request_count DESC";
+
+$regionalDistribution = $conn->query($regionalDistributionQuery);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -90,7 +202,8 @@ if ($statsResult && $statsResult->num_rows > 0) {
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
-    
+      <!-- Chart.js for line chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Custom CSS -->
     <style>
         body {
@@ -225,9 +338,28 @@ if ($statsResult && $statsResult->num_rows > 0) {
 <body>
     <!-- Include Sidebar -->
     <?php include 'includes/sidebar.php'; ?>
-    
-    <!-- Page Content -->
+      <!-- Page Content -->
     <div class="container-fluid py-4">
+        <!-- Year Selector -->
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-body">
+                        <form method="get" class="d-flex align-items-center">
+                            <label for="yearSelect" class="me-2">Select Year:</label>                            <select name="year" id="yearSelect" class="form-select me-2" style="width: auto;" onchange="this.form.submit()">
+                                <?php foreach ($availableYears as $year): ?>                                    <option value="<?php echo $year; ?>" 
+                                            <?php echo $year == $selectedYear ? 'selected' : ''; ?>
+                                            <?php echo !in_array($year, $yearsWithData) ? 'class="text-muted"' : ''; ?>>
+                                        <?php echo $year; ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Stats Cards -->
         <div class="row">
             <div class="col-md-3 mb-4">
@@ -243,7 +375,6 @@ if ($statsResult && $statsResult->num_rows > 0) {
                     </div>
                 </div>
             </div>
-            
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
@@ -257,7 +388,6 @@ if ($statsResult && $statsResult->num_rows > 0) {
                     </div>
                 </div>
             </div>
-            
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
@@ -271,7 +401,6 @@ if ($statsResult && $statsResult->num_rows > 0) {
                     </div>
                 </div>
             </div>
-            
             <div class="col-md-3 mb-4">
                 <div class="stats-card">
                     <div class="d-flex align-items-center">
@@ -286,58 +415,175 @@ if ($statsResult && $statsResult->num_rows > 0) {
                 </div>
             </div>
         </div>
-        
-        <!-- Recent Service Requests -->
-        <div class="table-container">
+
+        <!-- Yearly Trends Line Chart -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Monthly Request Trends - <?php echo $selectedYear; ?></h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="yearlyTrendsChart" style="height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- First Semester Summary -->
+        <div class="table-container mb-4">
             <div class="table-header">
-                <h5 class="table-title">Recent Service Requests</h5>
-                <a href="service-requests.php" class="table-link">View All</a>
+                <h5 class="table-title">First Semester Summary (January - June <?php echo $selectedYear; ?>)</h5>
             </div>
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Client</th>
-                            <th>Agency</th>
                             <th>Service Type</th>
-                            <th>Date Requested</th>
-                            <th>Status</th>
-                            <th>Actions</th>
+                            <th>Total Requests</th>
+                            <th>Resolved</th>
+                            <th>In Progress</th>
+                            <th>Pending</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php if (empty($serviceRequests)): ?>
+                        <?php if (empty($serviceTypes)): ?>
                             <tr>
-                                <td colspan="6" class="text-center">No service requests found.</td>
+                                <td colspan="5" class="text-center">No services available</td>
                             </tr>
                         <?php else: ?>
-                            <?php foreach ($serviceRequests as $request): ?>
+                            <?php 
+                            $firstSemTotal = 0;
+                            foreach ($serviceTypes as $service): 
+                                $serviceData = $firstSemesterSummary[$service] ?? [
+                                    'total_requests' => 0,
+                                    'resolved' => 0,
+                                    'in_progress' => 0,
+                                    'pending' => 0
+                                ];
+                                $firstSemTotal += $serviceData['total_requests'];
+                            ?>
                                 <tr>
+                                    <td><?php echo htmlspecialchars($service); ?></td>
+                                    <td><?php echo htmlspecialchars($serviceData['total_requests']); ?></td>
                                     <td>
-                                        <div class="fw-medium"><?php echo htmlspecialchars($request['client_name']); ?></div>
-                                        <div class="small text-muted"><?php echo htmlspecialchars($request['region']); ?>, <?php echo htmlspecialchars($request['province']); ?></div>
-                                    </td>
-                                    <td><?php echo htmlspecialchars($request['agency']); ?></td>
-                                    <td><?php echo htmlspecialchars($request['service_type']); ?></td>
-                                    <td><?php echo htmlspecialchars($request['date_requested']); ?></td>
-                                    <td>
-                                        <?php if ($request['status'] === 'Resolved'): ?>
-                                            <span class="status-badge status-resolved">Resolved</span>
-                                        <?php elseif ($request['status'] === 'In Progress'): ?>
-                                            <span class="status-badge status-progress">In Progress</span>
-                                        <?php else: ?>
-                                            <span class="status-badge status-pending">Pending</span>
-                                        <?php endif; ?>
+                                        <span class="status-badge status-resolved">
+                                            <?php echo htmlspecialchars($serviceData['resolved']); ?>
+                                        </span>
                                     </td>
                                     <td>
-                                        <a href="view-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                        <a href="edit_service.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                        <span class="status-badge status-progress">
+                                            <?php echo htmlspecialchars($serviceData['in_progress']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-pending">
+                                            <?php echo htmlspecialchars($serviceData['pending']); ?>
+                                        </span>
                                     </td>
                                 </tr>
                             <?php endforeach; ?>
+                            <tr class="table-dark">
+                                <td><strong>Total</strong></td>
+                                <td><strong><?php echo $firstSemTotal; ?></strong></td>
+                                <td colspan="3"></td>
+                            </tr>
                         <?php endif; ?>
                     </tbody>
                 </table>
+            </div>
+        </div>
+
+        <!-- Second Semester Summary -->
+        <div class="table-container mb-4">
+            <div class="table-header">
+                <h5 class="table-title">Second Semester Summary (July - December <?php echo $selectedYear; ?>)</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Service Type</th>
+                            <th>Total Requests</th>
+                            <th>Resolved</th>
+                            <th>In Progress</th>
+                            <th>Pending</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (empty($serviceTypes)): ?>
+                            <tr>
+                                <td colspan="5" class="text-center">No services available</td>
+                            </tr>
+                        <?php else: ?>
+                            <?php 
+                            $secondSemTotal = 0;
+                            foreach ($serviceTypes as $service): 
+                                $serviceData = $secondSemesterSummary[$service] ?? [
+                                    'total_requests' => 0,
+                                    'resolved' => 0,
+                                    'in_progress' => 0,
+                                    'pending' => 0
+                                ];
+                                $secondSemTotal += $serviceData['total_requests'];
+                            ?>
+                                <tr>
+                                    <td><?php echo htmlspecialchars($service); ?></td>
+                                    <td><?php echo htmlspecialchars($serviceData['total_requests']); ?></td>
+                                    <td>
+                                        <span class="status-badge status-resolved">
+                                            <?php echo htmlspecialchars($serviceData['resolved']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-progress">
+                                            <?php echo htmlspecialchars($serviceData['in_progress']); ?>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="status-badge status-pending">
+                                            <?php echo htmlspecialchars($serviceData['pending']); ?>
+                                        </span>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                            <tr class="table-dark">
+                                <td><strong>Total</strong></td>
+                                <td><strong><?php echo $secondSemTotal; ?></strong></td>
+                                <td colspan="3"></td>
+                            </tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Year Total Summary -->
+        <div class="table-container mb-4">
+            <div class="table-header">
+                <h5 class="table-title">Year <?php echo $selectedYear; ?> Total Summary</h5>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-6">
+                            <h3>First Semester Total</h3>
+                            <h2 class="text-primary"><?php echo $firstSemTotal; ?></h2>
+                            <p class="text-muted">January - June</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h3>Second Semester Total</h3>
+                            <h2 class="text-primary"><?php echo $secondSemTotal; ?></h2>
+                            <p class="text-muted">July - December</p>
+                        </div>
+                    </div>
+                    <div class="row mt-4">
+                        <div class="col-12 text-center">
+                            <h3>Total Requests for Year <?php echo $selectedYear; ?></h3>
+                            <h1 class="text-success"><?php echo $firstSemTotal + $secondSemTotal; ?></h1>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -349,8 +595,41 @@ if ($statsResult && $statsResult->num_rows > 0) {
                         <h5 class="card-title mb-0">Service Type Distribution</h5>
                     </div>
                     <div class="card-body">
-                        <div style="height: 300px;" class="d-flex align-items-center justify-content-center">
-                            <p class="text-muted mb-0">Chart visualization would be displayed here</p>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Service Type</th>
+                                        <th>Requests</th>
+                                        <th>Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if ($serviceDistribution && $serviceDistribution->num_rows > 0): ?>
+                                        <?php while ($row = $serviceDistribution->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?php echo htmlspecialchars($row['support_type']); ?></td>
+                                                <td><?php echo htmlspecialchars($row['request_count']); ?></td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-primary" role="progressbar" 
+                                                             style="width: <?php echo $row['percentage']; ?>%;"
+                                                             aria-valuenow="<?php echo $row['percentage']; ?>" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="100">
+                                                            <?php echo $row['percentage']; ?>%
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center">No data available</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -362,8 +641,41 @@ if ($statsResult && $statsResult->num_rows > 0) {
                         <h5 class="card-title mb-0">Regional Distribution</h5>
                     </div>
                     <div class="card-body">
-                        <div style="height: 300px;" class="d-flex align-items-center justify-content-center">
-                            <p class="text-muted mb-0">Chart visualization would be displayed here</p>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Region</th>
+                                        <th>Requests</th>
+                                        <th>Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if ($regionalDistribution && $regionalDistribution->num_rows > 0): ?>
+                                        <?php while ($row = $regionalDistribution->fetch_assoc()): ?>
+                                            <tr>
+                                                <td>Region <?php echo htmlspecialchars($row['region']); ?></td>
+                                                <td><?php echo htmlspecialchars($row['request_count']); ?></td>
+                                                <td>
+                                                    <div class="progress" style="height: 20px;">
+                                                        <div class="progress-bar bg-success" role="progressbar" 
+                                                             style="width: <?php echo $row['percentage']; ?>%;"
+                                                             aria-valuenow="<?php echo $row['percentage']; ?>" 
+                                                             aria-valuemin="0" 
+                                                             aria-valuemax="100">
+                                                            <?php echo $row['percentage']; ?>%
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endwhile; ?>
+                                    <?php else: ?>
+                                        <tr>
+                                            <td colspan="3" class="text-center">No data available</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -381,11 +693,93 @@ if ($statsResult && $statsResult->num_rows > 0) {
     </footer>
     
     <!-- Include Page Wrapper End -->
-    <?php include 'includes/page-wrapper.php'; ?>
+    
 
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Custom JavaScript for Pie Chart -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {        // Initialize line chart data
+
+        // Yearly trends line chart
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 
+                          'July', 'August', 'September', 'October', 'November', 'December'];
+        
+        const monthlyData = <?php echo json_encode(array_values($monthlyData)); ?>;
+        
+        const trendsData = {
+            labels: monthNames,
+            datasets: [
+                {
+                    label: 'Total Requests',
+                    data: monthlyData.map(m => m.total),
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Pending',
+                    data: monthlyData.map(m => m.pending),
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'In Progress',
+                    data: monthlyData.map(m => m.in_progress),
+                    borderColor: 'rgba(13, 202, 240, 1)',
+                    tension: 0.4,
+                    fill: false
+                },
+                {
+                    label: 'Resolved',
+                    data: monthlyData.map(m => m.resolved),
+                    borderColor: 'rgba(25, 135, 84, 1)',
+                    tension: 0.4,
+                    fill: false
+                }
+            ]
+        };
+
+        const trendsConfig = {
+            type: 'line',
+            data: trendsData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1
+                        }
+                    }
+                }
+            }
+        };
+
+        // Create the line chart
+        const trendsChart = new Chart(
+            document.getElementById('yearlyTrendsChart'),
+            trendsConfig
+        );
+    });
+    </script>
+
     <!-- Custom JavaScript for Sidebar Dropdown -->
     <script>
     document.addEventListener('DOMContentLoaded', function() {

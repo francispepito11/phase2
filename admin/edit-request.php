@@ -1,109 +1,96 @@
 <?php
-// Start session for authentication
 session_start();
 
-// Check if user is logged in, if not redirect to login page
+// Check if user is logged in
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header('Location: login.php');
     exit;
 }
 
-// Include database connection and CRUD operations
+// Include database connection
 require_once '../includes/db_connect.php';
-require_once '../includes/crud_operations.php';
-require_once '../includes/location_data.php';
 
 // Check if ID is provided
 if (!isset($_GET['id']) || empty($_GET['id'])) {
     header('Location: service-requests.php');
-    exit;
+    exit();
 }
 
 $id = (int)$_GET['id'];
 
-// Get request details
-$request = get_record_by_id('tech_support_requests', $id);
+// Get request and client details
+$stmt = $conn->prepare("
+    SELECT tsr.*, c.firstname, c.surname, c.middle_initial, c.email, c.phone, c.agency, c.region, c.province_id, c.district_id, c.municipality_id
+    FROM tech_support_requests tsr
+    JOIN clients c ON tsr.client_id = c.id
+    WHERE tsr.id = ?
+");
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$request = $result->fetch_assoc();
 
-// If request not found, redirect to service requests
+// If request not found, redirect
 if (!$request) {
     header('Location: service-requests.php');
-    exit;
+    exit();
 }
 
-// Define support types
-$supportTypes = [
-    'wifi' => 'WiFi Installation/Configuration',
-    'govnet' => 'GovNet Installation/Maintenance',
-    'ibpls' => 'iBPLS Virtual Assistance',
-    'pnpki' => 'PNPKI Tech Support',
-    'equipment-lending' => 'ICT Equipment Lending',
-    'cybersecurity' => 'Cybersecurity Support',
-    'office-facility' => 'Use of Office Facility',
-    'sim-card' => 'Sim Card Registration',
-    'comms' => 'Comms-related concern',
-    'technical-personnel' => 'Provision of Technical Personnel',
-    'other' => 'Other Services'
-];
+// Get support types from service_types table
+$supportTypes = [];
+$stmt = $conn->query("SELECT service_name FROM service_types WHERE is_active = 1 ORDER BY service_name");
+while ($row = $stmt->fetch_assoc()) {
+    $supportTypes[] = $row['service_name'];
+}
 
 // Process form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Validate and sanitize inputs
-    $update_data = [
-        'client_name' => sanitize_input($_POST['client_name']),
-        'agency' => sanitize_input($_POST['agency']),
-        'gender' => sanitize_input($_POST['gender']),
-        'age' => (int)$_POST['age'],
-        'region_id' => (int)$_POST['region_id'],
-        'province_id' => (int)$_POST['province_id'],
-        'district_id' => !empty($_POST['district_id']) ? (int)$_POST['district_id'] : null,
-        'municipality_id' => (int)$_POST['municipality_id'],
-        'support_type' => sanitize_input($_POST['support_type']),
-        'status' => sanitize_input($_POST['status']),
-        'remarks' => sanitize_input($_POST['remarks'])
-    ];
-
-    // Update status-related fields
-    if ($update_data['status'] === 'In Progress' && empty($request['date_assisted'])) {
-        $update_data['date_assisted'] = date('Y-m-d H:i:s');
-    } elseif ($update_data['status'] === 'Resolved' && empty($request['date_resolved'])) {
-        $update_data['date_resolved'] = date('Y-m-d H:i:s');
-    }
-
-    // Attempt to update the record
-    if (update_record('tech_support_requests', $id, $update_data)) {
-        header('Location: view-request.php?id=' . $id . '&updated=1');
-        exit;
-    }
-}
-
-// Get region, province, and municipality names
-$region_name = '';
-$province_name = '';
-$municipality_name = '';
-
-if (!empty($request['region_id'])) {
-    $region = get_record_by_id('regions', $request['region_id']);
-    if ($region) {
-        $region_name = $region['region_name'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {    $status = $_POST['status'];
+    $remarks = $_POST['remarks'];
+    $date_assisted = null;
+    $date_resolved = null;
+    
+    if ($status == 'In Progress' && empty($request['date_assisted'])) {
+        $date_assisted = date('Y-m-d H:i:s');
+    } elseif ($status == 'Resolved') {
+        if (empty($request['date_resolved'])) {
+            $date_resolved = date('Y-m-d H:i:s');
+        }
+        if (empty($request['date_assisted'])) {
+            $date_assisted = date('Y-m-d H:i:s');
+        }
+    }    // Update the request
+    $stmt = $conn->prepare("
+        UPDATE tech_support_requests 
+        SET status = ?,
+            remarks = ?,
+            date_assisted = COALESCE(?, date_assisted),
+            date_resolved = COALESCE(?, date_resolved),
+            updated_at = CURRENT_TIMESTAMP,
+            assisted_by_id = ?
+        WHERE id = ?
+    ");
+    
+    $assisted_by_id = $_SESSION['username'] ?? null;
+    $stmt->bind_param("sssssi", $status, $remarks, $date_assisted, $date_resolved, $assisted_by_id, $id);
+    
+    if ($stmt->execute()) {
+        header('Location: service-requests.php?updated=1');
+        exit();
     }
 }
 
-if (!empty($request['province_id'])) {
-    $province = get_record_by_id('provinces', $request['province_id']);
-    if ($province) {
-        $province_name = $province['province_name'];
-    }
-}
-
-if (!empty($request['municipality_id'])) {
-    $municipality = get_record_by_id('municipalities', $request['municipality_id']);
-    if ($municipality) {
-        $municipality_name = $municipality['municipality_name'];
-    }
-}
-
-// Get all regions for dropdown
-$regions = read_records('regions', ['*'], [], 'region_name ASC');
+// Get location details
+$stmt = $conn->prepare("
+    SELECT r.region_name, p.province_name, d.district_name, m.municipality_name
+    FROM regions r 
+    LEFT JOIN provinces p ON p.id = ?
+    LEFT JOIN districts d ON d.id = ?
+    LEFT JOIN municipalities m ON m.id = ?
+    WHERE r.region_code = ?
+");
+$stmt->bind_param("iiis", $request['province_id'], $request['district_id'], $request['municipality_id'], $request['region']);
+$stmt->execute();
+$location = $stmt->get_result()->fetch_assoc();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -160,31 +147,19 @@ $regions = read_records('regions', ['*'], [], 'region_name ASC');
                             <!-- Client Information -->
                             <div class="col-span-6">
                                 <h3 class="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
+                            </div>                            <div class="col-span-6 sm:col-span-3">
+                                <label class="block text-sm font-medium text-gray-700">Client Name</label>
+                                <input type="text" value="<?php echo htmlspecialchars($request['firstname'] . ' ' . $request['middle_initial'] . ' ' . $request['surname']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <div class="col-span-6 sm:col-span-3">
-                                <label for="client_name" class="block text-sm font-medium text-gray-700">Client Name</label>
-                                <input type="text" name="client_name" id="client_name" value="<?php echo htmlspecialchars($request['client_name']); ?>" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <label class="block text-sm font-medium text-gray-700">Agency</label>
+                                <input type="text" value="<?php echo htmlspecialchars($request['agency']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <div class="col-span-6 sm:col-span-3">
-                                <label for="agency" class="block text-sm font-medium text-gray-700">Agency</label>
-                                <input type="text" name="agency" id="agency" value="<?php echo htmlspecialchars($request['agency']); ?>" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                            </div>
-
-                            <div class="col-span-6 sm:col-span-3">
-                                <label for="gender" class="block text-sm font-medium text-gray-700">Gender</label>
-                                <select name="gender" id="gender" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="Male" <?php echo $request['gender'] === 'Male' ? 'selected' : ''; ?>>Male</option>
-                                    <option value="Female" <?php echo $request['gender'] === 'Female' ? 'selected' : ''; ?>>Female</option>
-                                    <option value="Other" <?php echo $request['gender'] === 'Other' ? 'selected' : ''; ?>>Other</option>
-                                    <option value="Prefer not to say" <?php echo $request['gender'] === 'Prefer not to say' ? 'selected' : ''; ?>>Prefer not to say</option>
-                                </select>
-                            </div>
-
-                            <div class="col-span-6 sm:col-span-3">
-                                <label for="age" class="block text-sm font-medium text-gray-700">Age</label>
-                                <input type="number" name="age" id="age" value="<?php echo htmlspecialchars($request['age']); ?>" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
+                                <label class="block text-sm font-medium text-gray-700">Contact Details</label>
+                                <input type="text" value="<?php echo htmlspecialchars($request['email'] . ' / ' . $request['phone']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <!-- Location Information -->
@@ -193,35 +168,23 @@ $regions = read_records('regions', ['*'], [], 'region_name ASC');
                             </div>
 
                             <div class="col-span-6 sm:col-span-3">
-                                <label for="region_id" class="block text-sm font-medium text-gray-700">Region</label>
-                                <select name="region_id" id="region_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <?php foreach ($regions as $region): ?>
-                                        <option value="<?php echo $region['id']; ?>" <?php echo $request['region_id'] == $region['id'] ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($region['region_name']); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Region</label>
+                                <input type="text" value="<?php echo htmlspecialchars($location['region_name'] ?? $request['region']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <div class="col-span-6 sm:col-span-3">
-                                <label for="province_id" class="block text-sm font-medium text-gray-700">Province</label>
-                                <select name="province_id" id="province_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="<?php echo $request['province_id']; ?>"><?php echo htmlspecialchars($province_name); ?></option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Province</label>
+                                <input type="text" value="<?php echo htmlspecialchars($location['province_name'] ?? ''); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <div class="col-span-6 sm:col-span-3">
-                                <label for="district_id" class="block text-sm font-medium text-gray-700">District</label>
-                                <select name="district_id" id="district_id" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="">Select District</option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">District</label>
+                                <input type="text" value="<?php echo htmlspecialchars($location['district_name'] ?? ''); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <div class="col-span-6 sm:col-span-3">
-                                <label for="municipality_id" class="block text-sm font-medium text-gray-700">Municipality</label>
-                                <select name="municipality_id" id="municipality_id" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="<?php echo $request['municipality_id']; ?>"><?php echo htmlspecialchars($municipality_name); ?></option>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Municipality</label>
+                                <input type="text" value="<?php echo htmlspecialchars($location['municipality_name'] ?? ''); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
 
                             <!-- Support Request Details -->
@@ -230,15 +193,18 @@ $regions = read_records('regions', ['*'], [], 'region_name ASC');
                             </div>
 
                             <div class="col-span-6">
-                                <label for="support_type" class="block text-sm font-medium text-gray-700">Support Type</label>
-                                <select name="support_type" id="support_type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <?php foreach ($supportTypes as $value => $label): ?>
-                                        <option value="<?php echo $label; ?>" <?php echo $request['support_type'] === $label ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($label); ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <label class="block text-sm font-medium text-gray-700">Support Type</label>
+                                <input type="text" value="<?php echo htmlspecialchars($request['support_type']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
                             </div>
+
+                            <div class="col-span-6">
+                                <label class="block text-sm font-medium text-gray-700">Subject</label>
+                                <input type="text" value="<?php echo htmlspecialchars($request['subject']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
+                            </div>
+
+                            <div class="col-span-6">
+                                <label class="block text-sm font-medium text-gray-700">Issue Description</label>
+                                <textarea readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm"><?php echo htmlspecialchars($request['message'] ?? $request['issue_description']); ?></textarea>
                             </div>
 
                             <!-- Status Information -->

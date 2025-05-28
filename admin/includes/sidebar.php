@@ -5,9 +5,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
 <!-- Sidebar Component -->
 <div class="d-flex flex-column flex-shrink-0 sidebar" id="sidebar-wrapper">
     <div class="sidebar-header p-3 text-center">
-        <img src="../assets/img/dict_logo.png" alt="DICT Logo" class="img-fluid rounded-circle mb-2" style="width: 70px; height: 70px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
+        <img src="../images/dict-logo.png" alt  ="DICT Logo" class="img-fluid rounded-circle mb-2" style="width: 70px; height: 70px; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 2px 10px rgba(0,0,0,0.2);">
         <div class="sidebar-title">
-            <h5 class="text-white mb-0 fw-bold">DICT CMS</h5>
+            <h5 class="text-white mb-0 fw-bold">ILCDB</h5>
             <p class="text-white-50 small">Admin Dashboard</p>
         </div>
     </div>

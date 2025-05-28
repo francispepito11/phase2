@@ -5,7 +5,21 @@ $username = "root";
 $password = "";
 $dbname = "dict";
 
-// Create connection
+// Create PDO connection
+function get_db_connection() {
+    global $servername, $username, $password, $dbname;
+    try {
+        $pdo = new PDO("mysql:host=$servername;dbname=$dbname", $username, $password);
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+        $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+        return $pdo;
+    } catch(PDOException $e) {
+        error_log("Connection failed: " . $e->getMessage());
+        throw $e;
+    }
+}
+
+// Create mysqli connection for backward compatibility
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection

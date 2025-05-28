@@ -6,6 +6,9 @@ session_start();
 require_once 'includes/db_connect.php';
 require_once 'includes/crud_operations.php';
 
+// Get PDO connection from db_connect.php
+$pdo = get_db_connection();
+
 // Initialize error array
 $errors = [];
 
@@ -29,8 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $message = isset($_POST['message']) ? sanitize_input($_POST['message']) : '';
         $gender = isset($_POST['gender']) ? sanitize_input($_POST['gender']) : '';
         $birthdate = isset($_POST['birthdate']) ? sanitize_input($_POST['birthdate']) : '';
-        $email = isset($_POST['email']) ? sanitize_input($_POST['email']) : 'support@example.com'; // Default email
-        $phone = isset($_POST['phone']) ? sanitize_input($_POST['phone']) : '1234567890'; // Default phone
+        $email = isset($_POST['email']) ? sanitize_input($_POST['email']) : 'support@example.com';
+        $phone = isset($_POST['phone']) ? sanitize_input($_POST['phone']) : '1234567890';
         $privacy = isset($_POST['privacy']) ? true : false;
 
         // Basic validation
@@ -48,7 +51,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         if (empty($support_type)) {
             $errors[] = "Support type is required";
-        }        if (empty($subject)) {
+        }
+        if (empty($subject)) {
             $errors[] = "Subject is required";
         }
         if (empty($gender)) {
@@ -71,12 +75,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Get current date and time
             $current_datetime = date('Y-m-d H:i:s');
 
-            // Prepare data for insertion
-            $support_data = [
+            // Check if client already exists
+            $client_name = $first_name . ' ' . $middle_initial . ' ' . $surname;
+            $existing_client = null;
+            
+            try {
+                $stmt = $pdo->prepare("SELECT * FROM clients WHERE firstname = ? AND surname = ? AND middle_initial = ?");
+                $stmt->execute([$first_name, $surname, $middle_initial]);
+                $existing_client = $stmt->fetch(PDO::FETCH_ASSOC);
+            } catch (PDOException $e) {
+                error_log("Error checking for existing client: " . $e->getMessage());
+            }
+
+            // Client data for insertion or reference
+            $client_data = [
                 'firstname' => $first_name,
                 'surname' => $surname,
                 'middle_initial' => $middle_initial,
-                'client_name' => $first_name . ' ' . $middle_initial . ' ' . $surname,
+                'client_name' => $client_name,
                 'agency' => $agency,
                 'gender' => $gender,
                 'birthdate' => $birthdate,
@@ -85,22 +101,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'province_id' => $province_id,
                 'district_id' => $district_id,
                 'municipality_id' => $municipality_id,
+                'email' => $email,
+                'phone' => $phone,
+                'created_at' => $current_datetime
+            ];
+
+            // Get or create client record
+            $client_id = null;
+            if ($existing_client) {
+                $client_id = $existing_client['id'];
+                // Update existing client info
+                $update_data = array_intersect_key($client_data, array_flip(['agency', 'email', 'phone']));
+                if (!empty($update_data)) {
+                    update_record('clients', $client_id, $update_data);
+                }
+            } else {
+                // Insert new client record
+                $client_id = create_record('clients', $client_data);
+                if ($client_id === false) {
+                    throw new Exception("Failed to create client record");
+                }
+            }
+
+            // Prepare support request data
+            $support_data = [
+                'client_id' => $client_id,
                 'support_type' => $support_type,
                 'subject' => $subject,
                 'message' => $message,
                 'status' => 'Pending',
-                'date_requested' => $current_datetime
+                'date_requested' => $current_datetime,
+                'created_at' => $current_datetime
             ];
 
-            // Insert record using CRUD function
+            // Insert support request record
             $result = create_record('tech_support_requests', $support_data);
-
             if ($result === false) {
                 throw new Exception("Failed to create support request record");
-            }            // Success - store message in session and redirect
+            }
+
+            // Success - store message in session and redirect
             $_SESSION['success_message'] = "Your support request has been submitted successfully. Our team will contact you soon.";
-            $client_name = urlencode($first_name . ' ' . $middle_initial . ' ' . $surname);
-            header('Location: tech-support.php?status=success&client_name=' . $client_name);
+            header('Location: tech-support.php?status=success&client_name=' . urlencode($client_name));
             exit();
         }
     } catch (Exception $e) {

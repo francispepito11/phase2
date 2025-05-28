@@ -20,8 +20,28 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 
-// Get request details
-$request = get_record_by_id('tech_support_requests', $id);
+// Get request details with client information
+$sql = "SELECT tsr.*, 
+        c.firstname, c.surname, c.middle_initial, c.email, c.phone,
+        c.agency, c.gender, c.birthdate, 
+        r.region_name, r.region_code,
+        p.province_name, p.province_code,
+        d.district_name, d.district_code,
+        m.municipality_name, m.municipality_code,
+        TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) as age
+        FROM tech_support_requests tsr 
+        LEFT JOIN clients c ON tsr.client_id = c.id
+        LEFT JOIN regions r ON c.region_id = r.id
+        LEFT JOIN provinces p ON c.province_id = p.id
+        LEFT JOIN districts d ON c.district_id = d.id
+        LEFT JOIN municipalities m ON c.municipality_id = m.id
+        WHERE tsr.id = ?";
+
+$stmt = $conn->prepare($sql);
+$stmt->bind_param("i", $id);
+$stmt->execute();
+$result = $stmt->get_result();
+$request = $result->fetch_assoc();
 
 // If request not found, redirect to service requests
 if (!$request) {
@@ -29,33 +49,18 @@ if (!$request) {
     exit;
 }
 
-// Get region, province, and municipality names
-$region_name = '';
-$province_name = '';
-$municipality_name = '';
+// Construct full name
+$fullname = trim($request['firstname'] . ' ' . 
+    ($request['middle_initial'] ? $request['middle_initial'] . ' ' : '') . 
+    $request['surname']);
 
-if (!empty($request['region_id'])) {
-    $region = get_record_by_id('regions', $request['region_id']);
-    if ($region) {
-        $region_name = $region['region_name'];
-    } else {
-        error_log("Region not found for ID: " . $request['region_id']);
-    }
-}
-
-if (!empty($request['province_id'])) {
-    $province = get_record_by_id('provinces', $request['province_id']);
-    if ($province) {
-        $province_name = $province['province_name']; // Fixed key from 'name' to 'province_name'
-    }
-}
-
-if (!empty($request['municipality_id'])) {
-    $municipality = get_record_by_id('municipalities', $request['municipality_id']);
-    if ($municipality) {
-        $municipality_name = $municipality['municipality_name']; // Fixed key from 'name' to 'municipality_name'
-    }
-}
+// Format location information
+$location_parts = array_filter([
+    $request['region_name'] . (!empty($request['region_code']) ? ' (' . $request['region_code'] . ')' : ''),
+    $request['province_name'],
+    $request['district_name'],
+    $request['municipality_name']
+]);
 
 // Determine status class for badge
 $status_class = 'bg-yellow-100 text-yellow-800';
@@ -178,39 +183,54 @@ $success_message = isset($_GET['updated']) && $_GET['updated'] == 1 ? 'Support r
                         <dl>
                             <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                                 <dt class="text-sm font-medium text-gray-500">Client Name</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['client_name']); ?></dd>
-                            </div>
-                            <!-- <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Email</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['email']); ?></dd>
-                            </div>
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Phone</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['phone']); ?></dd>
-                            </div> -->
-                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Agency/Organization</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['agency']); ?></dd>
-                            </div>
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Location</dt>
                                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <?php 
-                                    $location_parts = array_filter([$region_name, $province_name, $municipality_name]);
-                                    echo !empty($location_parts) ? implode(', ', $location_parts) : 'Not specified';
-                                    ?>
+                                    <?php echo htmlspecialchars($fullname); ?>
+                                    <div class="text-sm text-gray-500">
+                                        <?php echo htmlspecialchars($request['gender']); ?> | 
+                                        Age: <?php echo $request['age']; ?>
+                                    </div>
                                 </dd>
                             </div>
                             <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Support Type</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['support_type']); ?></dd>
+                                <dt class="text-sm font-medium text-gray-500">Contact Info</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    <div>Email: <?php echo htmlspecialchars($request['email']); ?></div>
+                                    <div>Phone: <?php echo htmlspecialchars($request['phone']); ?></div>
+                                </dd>
                             </div>
+                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Agency/Organization</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['agency']); ?></dd>
+                            </div>
+                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Location</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    <?php echo !empty($location_parts) ? implode(', ', $location_parts) : 'Not specified'; ?>
+                                </dd>
+                            </div>
+                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Support Request</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    <div class="font-medium"><?php echo htmlspecialchars($request['support_type']); ?></div>
+                                    <div class="text-gray-500"><?php echo htmlspecialchars($request['subject']); ?></div>
+                                </dd>
+                            </div>
+                            <?php if (!empty($request['message'])): ?>
+                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
+                                <dt class="text-sm font-medium text-gray-500">Message</dt>
+                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
+                                    <?php echo nl2br(htmlspecialchars($request['message'])); ?>
+                                </dd>
+                            </div>
+                            <?php endif; ?>
+                            <?php if (!empty($request['issue_description'])): ?>
                             <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                                 <dt class="text-sm font-medium text-gray-500">Issue Description</dt>
                                 <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
                                     <?php echo nl2br(htmlspecialchars($request['issue_description'])); ?>
                                 </dd>
                             </div>
+                            <?php endif; ?>
                             <?php if (!empty($request['attachment'])): ?>
                             <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
                                 <dt class="text-sm font-medium text-gray-500">Attachment</dt>

@@ -1,23 +1,9 @@
--- --------------------------------------------------------
-
--- Table structure for table `client_feedback`
-
-CREATE TABLE `client_feedback` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `support_request_id` int(11) DEFAULT NULL,
-  `client_name` varchar(100) DEFAULT NULL,
-  `rating` int(1) NOT NULL,
-  `comment` text DEFAULT NULL,
-  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `support_request_id` (`support_request_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 -- phpMyAdmin SQL Dump
 -- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: May 27, 2025 at 02:27 AM
+-- Generation Time: May 27, 2025 at 05:32 AM
 -- Server version: 10.4.32-MariaDB
 -- PHP Version: 8.2.12
 
@@ -34,6 +20,61 @@ SET time_zone = "+00:00";
 --
 -- Database: `dict`
 --
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `clients`
+--
+
+CREATE TABLE `clients` (
+  `id` int(11) NOT NULL,
+  `firstname` varchar(50) NOT NULL,
+  `surname` varchar(50) NOT NULL,
+  `middle_initial` char(1) DEFAULT NULL,
+  `client_name` varchar(100) NOT NULL,
+  `agency` varchar(100) NOT NULL,
+  `gender` varchar(10) NOT NULL,
+  `birthdate` date NOT NULL,
+  `region` varchar(50) NOT NULL,
+  `region_id` int(11) DEFAULT NULL,
+  `province_id` int(11) DEFAULT NULL,
+  `district_id` int(11) DEFAULT NULL,
+  `municipality_id` int(11) DEFAULT NULL,
+  `email` varchar(255) DEFAULT NULL,
+  `phone` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `clients`
+--
+
+INSERT INTO `clients` (`id`, `firstname`, `surname`, `middle_initial`, `client_name`, `agency`, `gender`, `birthdate`, `region`, `region_id`, `province_id`, `district_id`, `municipality_id`, `email`, `phone`, `created_at`) VALUES
+(3, 'Bertizal', 'Heding', 'i', 'Bertizal i Heding', 'Unemployed', 'Male', '1997-12-10', '12', 12, 12, 1, 65, 'support@example.com', '1234567890', '2025-05-26 21:13:57'),
+(4, 'Rasheed', 'Heding', 'M', 'Rasheed M Heding', 'Student', 'Male', '1999-12-10', '12', 12, 18, 13, 78, 'support@example.com', '1234567890', '2025-05-26 21:24:35');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `client_feedback`
+--
+
+CREATE TABLE `client_feedback` (
+  `id` int(11) NOT NULL,
+  `support_request_id` int(11) DEFAULT NULL,
+  `client_name` varchar(100) DEFAULT NULL,
+  `rating` int(1) NOT NULL,
+  `comment` text DEFAULT NULL,
+  `submitted_at` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Dumping data for table `client_feedback`
+--
+
+INSERT INTO `client_feedback` (`id`, `support_request_id`, `client_name`, `rating`, `comment`, `submitted_at`) VALUES
+(9, 0, 'Rasheed M Heding', 4, 'Nice service portal', '2025-05-27 03:25:03');
 
 -- --------------------------------------------------------
 
@@ -264,18 +305,7 @@ CREATE TABLE `support_requests` (
 
 CREATE TABLE `tech_support_requests` (
   `id` int(11) NOT NULL,
-  `firstname` varchar(50) NOT NULL,
-  `surname` varchar(50) NOT NULL,
-  `middle_initial` char(1) DEFAULT NULL,
-  `client_name` varchar(100) NOT NULL,
-  `agency` varchar(100) NOT NULL,
-  `gender` enum('Male','Female','Other','Prefer not to say') NOT NULL,
-  `age` int(11) NOT NULL,
-  `region` varchar(50) NOT NULL,
-  `region_id` int(11) NOT NULL,
-  `province_id` int(11) NOT NULL,
-  `district_id` int(11) DEFAULT NULL,
-  `municipality_id` int(11) NOT NULL,
+  `client_id` int(11) NOT NULL,
   `support_type` varchar(100) NOT NULL,
   `subject` varchar(255) DEFAULT NULL,
   `message` text NOT NULL,
@@ -294,14 +324,10 @@ CREATE TABLE `tech_support_requests` (
 -- Dumping data for table `tech_support_requests`
 --
 
-INSERT INTO `tech_support_requests` (`id`, `firstname`, `surname`, `middle_initial`, `client_name`, `agency`, `gender`, `age`, `region`, `region_id`, `province_id`, `district_id`, `municipality_id`, `support_type`, `subject`, `message`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
-(15, '', '', NULL, 'Bertizal', 'SCC', 'Male', 25, '', 12, 18, 13, 78, 'Use of Space, ICT Equipment and Internet Connectivity', 'Computer USE', '', '1', '2025-05-19 05:12:50', NULL, NULL, NULL, 'Pending', NULL, '2025-05-19 11:12:50', '2025-05-19 11:12:50'),
-(16, 'Rasheed', 'Heding', 'M', 'Jose Rizal', 'SCC', 'Male', 25, '12', 17, 18, NULL, 29, 'WiFi Installation/Configuration', '1', '1', '1', '2025-05-19 11:19:07', '2025-05-19 21:58:23', '2025-05-19 21:59:20', NULL, 'Resolved', 'Q1', '2025-05-19 11:19:07', '2025-05-20 03:59:20'),
-(17, '', '', NULL, 'Nidzmmhar J Tuttuh', 'SCC', 'Male', 24, '', 12, 18, 13, 20, 'Use of Space, ICT Equipment and Internet Connectivity', '12', '', '12', '2025-05-19 05:20:26', NULL, NULL, NULL, 'Pending', NULL, '2025-05-19 11:20:26', '2025-05-19 11:20:26'),
-(18, 'Francis', 'Pepito', 'K', 'Francis K Pepito', 'SCC', 'Male', 25, '12', 12, 18, 13, 78, 'Use of Space, ICT Equipment and Internet Connectivity', '23', '', '23SFSF', '2025-05-19 05:24:37', '2025-05-19 05:26:03', '2025-05-19 05:26:32', NULL, 'Resolved', 'FIx', '2025-05-19 11:24:37', '2025-05-19 11:26:32'),
-(19, 'Jim', 'Hadjili', 'Y', 'Jim Y Hadjili', 'SCC', 'Female', 25, '12', 12, 18, NULL, 42, 'Sim Card Registration', 'Provide Support for Registration', '', '1', '2025-05-19 06:18:31', '2025-05-19 06:49:32', '2025-05-19 21:14:32', NULL, 'Resolved', 'Fix Yeah', '2025-05-19 12:18:31', '2025-05-20 03:42:47'),
-(20, 'Juan', 'Cruz', 'D', 'Juan D Cruz', 'DTI', 'Male', 0, '17', 17, 16, 4, 19, 'Comms-related concern', 'Repair', '', '', '2025-05-26 02:23:13', NULL, NULL, NULL, 'Pending', NULL, '2025-05-26 08:23:13', '2025-05-26 08:23:13'),
-(21, 'Yorme', 'Yorm', 'Y', 'Yorme Y Yorm', 'DEPED', 'Male', 0, '12', 12, 18, 13, 78, 'Use of ICT Equipment', 'Use of Computer', '', '', '2025-05-26 18:19:45', NULL, NULL, NULL, 'Pending', NULL, '2025-05-27 00:19:45', '2025-05-27 00:19:45');
+INSERT INTO `tech_support_requests` (`id`, `client_id`, `support_type`, `subject`, `message`, `issue_description`, `date_requested`, `date_assisted`, `date_resolved`, `assisted_by_id`, `status`, `remarks`, `created_at`, `updated_at`) VALUES
+(3, 3, 'Sim Card Registration', 'eGov App', '', '', '2025-05-26 21:13:57', NULL, NULL, NULL, 'Pending', NULL, '2025-05-26 21:13:57', '2025-05-27 03:13:57'),
+(4, 3, 'Provision of Technical Personnel/ Resoure Person', 'b', '', '', '2025-05-26 21:21:34', NULL, NULL, NULL, 'Pending', NULL, '2025-05-26 21:21:34', '2025-05-27 03:21:34'),
+(5, 4, 'Use of ICT Equipment', 'Computer USE', '', '', '2025-05-26 21:24:35', NULL, NULL, NULL, 'Pending', NULL, '2025-05-26 21:24:35', '2025-05-27 03:24:35');
 
 -- --------------------------------------------------------
 
@@ -371,6 +397,19 @@ INSERT INTO `users` (`id`, `username`, `password`, `email`, `role`, `created_at`
 --
 
 --
+-- Indexes for table `clients`
+--
+ALTER TABLE `clients`
+  ADD PRIMARY KEY (`id`);
+
+--
+-- Indexes for table `client_feedback`
+--
+ALTER TABLE `client_feedback`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `support_request_id` (`support_request_id`);
+
+--
 -- Indexes for table `districts`
 --
 ALTER TABLE `districts`
@@ -417,13 +456,10 @@ ALTER TABLE `support_requests`
 --
 ALTER TABLE `tech_support_requests`
   ADD PRIMARY KEY (`id`),
-  ADD KEY `region_id` (`region_id`),
-  ADD KEY `province_id` (`province_id`),
-  ADD KEY `district_id` (`district_id`),
-  ADD KEY `municipality_id` (`municipality_id`),
   ADD KEY `assisted_by_id` (`assisted_by_id`),
   ADD KEY `date_requested` (`date_requested`),
-  ADD KEY `status` (`status`);
+  ADD KEY `status` (`status`),
+  ADD KEY `fk_client_id` (`client_id`);
 
 --
 -- Indexes for table `training_events`
@@ -455,6 +491,18 @@ ALTER TABLE `users`
 --
 
 --
+-- AUTO_INCREMENT for table `clients`
+--
+ALTER TABLE `clients`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+
+--
+-- AUTO_INCREMENT for table `client_feedback`
+--
+ALTER TABLE `client_feedback`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
+
+--
 -- AUTO_INCREMENT for table `districts`
 --
 ALTER TABLE `districts`
@@ -482,7 +530,17 @@ ALTER TABLE `support_requests`
 -- AUTO_INCREMENT for table `tech_support_requests`
 --
 ALTER TABLE `tech_support_requests`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `tech_support_requests`
+--
+ALTER TABLE `tech_support_requests`
+  ADD CONSTRAINT `fk_client_id` FOREIGN KEY (`client_id`) REFERENCES `clients` (`id`);
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

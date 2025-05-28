@@ -11,6 +11,112 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 // Include database connection and CRUD operations
 require_once '../includes/db_connect.php';
 require_once '../includes/crud_operations.php';
+require_once '../vendor/autoload.php'; // Add PhpSpreadsheet autoload
+
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+
+// Show error message if exists
+$error_message = '';
+if (isset($_SESSION['error'])) {
+    $error_message = $_SESSION['error'];
+    unset($_SESSION['error']);
+}
+
+// Handle Excel Export
+if (isset($_POST['export_excel'])) {
+    $start_date = isset($_POST['export_start_date']) ? sanitize_input($_POST['export_start_date']) : '';
+    $end_date = isset($_POST['export_end_date']) ? sanitize_input($_POST['export_end_date']) : '';
+    
+    // Validate dates
+    if (empty($start_date) || empty($end_date)) {
+        $_SESSION['error'] = "Please select both start and end dates for export.";
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
+    if (!strtotime($start_date) || !strtotime($end_date)) {
+        $_SESSION['error'] = "Please provide valid dates for export.";
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+    
+    // Add one day to end_date to make it inclusive
+    $end_date = date('Y-m-d', strtotime($end_date . ' +1 day'));
+    
+    if (strtotime($start_date) > strtotime($end_date)) {
+        $_SESSION['error'] = "Start date cannot be after end date.";
+        header('Location: ' . $_SERVER['PHP_SELF']);
+        exit;
+    }
+
+    // Create new Spreadsheet object
+    $spreadsheet = new Spreadsheet();
+    $sheet = $spreadsheet->getActiveSheet();
+    
+    // Set report title and date range
+    $sheet->setCellValue('A1', 'Service Requests Report');
+    $sheet->setCellValue('A2', 'Period: ' . date('F d, Y', strtotime($start_date)) . ' to ' . date('F d, Y', strtotime($end_date . ' -1 day')));
+    
+    // Style the title and date range
+    $sheet->getStyle('A1')->getFont()->setBold(true)->setSize(14);
+    $sheet->getStyle('A2')->getFont()->setItalic(true);
+    
+    // Set headers starting from row 4
+    $headers = ['Request ID', 'Date Requested', 'Client Name', 'Region', 'Sector/Agency', 
+                'Support Type', 'Subject', 'Status', 'Issue Description'];
+    $col = 'A';
+    $headerRow = 4;
+    foreach ($headers as $header) {
+        $sheet->setCellValue($col . $headerRow, $header);
+        $sheet->getColumnDimension($col)->setAutoSize(true);
+        $col++;
+    }
+
+    // Style the headers
+    $sheet->getStyle("A{$headerRow}:I{$headerRow}")->getFont()->setBold(true);
+
+    // Fetch data within date range
+    $export_query = "SELECT tsr.*, c.firstname, c.surname, c.middle_initial, c.gender, c.agency, 
+                     r.region_name, r.region_code
+                     FROM tech_support_requests tsr 
+                     LEFT JOIN clients c ON tsr.client_id = c.id
+                     LEFT JOIN regions r ON c.region_id = r.id
+                     WHERE tsr.date_requested >= ? AND tsr.date_requested < ?
+                     ORDER BY tsr.date_requested DESC";
+      $stmt = $conn->prepare($export_query);
+    $stmt->bind_param('ss', $start_date, $end_date);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    $row = $headerRow + 1; // Start from row 5 (after title, date range, and headers)
+    while ($data = $result->fetch_assoc()) {
+        $sheet->setCellValue('A' . $row, $data['id']);
+        $sheet->setCellValue('B' . $row, $data['date_requested']);
+        $sheet->setCellValue('C' . $row, $data['firstname'] . ' ' . $data['middle_initial'] . ' ' . $data['surname']);
+        $sheet->setCellValue('D' . $row, $data['region_name']);
+        $sheet->setCellValue('E' . $row, $data['agency']);
+        $sheet->setCellValue('F' . $row, $data['support_type']);
+        $sheet->setCellValue('G' . $row, $data['subject']);
+        $sheet->setCellValue('H' . $row, $data['status']);
+        $sheet->setCellValue('I' . $row, $data['issue_description']);
+        $row++;
+    }
+
+    // Style the header row
+    $sheet->getStyle('A1:I1')->getFont()->setBold(true);
+    
+    // Create Excel file
+    $writer = new Xlsx($spreadsheet);
+    
+    // Set headers for download    header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    header('Content-Disposition: attachment;filename="service_requests_' . $start_date . '_to_' . date('Y-m-d', strtotime($end_date . ' -1 day')) . '.xlsx"');
+    header('Cache-Control: max-age=0');
+    
+    // Save file to PHP output
+    $writer->save('php://output');
+    exit;
+}
 
 // Set page title
 $page_title = "Service Requests";
@@ -31,19 +137,71 @@ if (!empty($status_filter)) {
 
 // Get tech support requests
 try {
+    $base_query = "SELECT tsr.*, c.firstname, c.surname, c.middle_initial, c.gender, c.agency, c.region, 
+                   TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) as age,
+                   r.region_name, r.region_code
+                   FROM tech_support_requests tsr 
+                   LEFT JOIN clients c ON tsr.client_id = c.id
+                   LEFT JOIN regions r ON c.region_id = r.id";
+    
+    $count_query = "SELECT COUNT(*) as total FROM tech_support_requests tsr 
+                    LEFT JOIN clients c ON tsr.client_id = c.id";
+    
+    $where_conditions = array();
+    $params = array();
+    
     if (!empty($search_term)) {
-        $search_columns = ['client_name', 'agency', 'email', 'phone', 'support_type', 'issue_description'];
-        $serviceRequests = search_records('tech_support_requests', $search_columns, $search_term, ['*'], 'date_requested DESC', $records_per_page, $offset);
-        $total_records = count_records('tech_support_requests');
-    } else {
-        if (!empty($where)) {
-            $serviceRequests = read_records('tech_support_requests', ['*'], $where, 'date_requested DESC', $records_per_page, $offset);
-            $total_records = count_records('tech_support_requests', $where);
-        } else {
-            $serviceRequests = read_records('tech_support_requests', ['*'], [], 'date_requested DESC', $records_per_page, $offset);
-            $total_records = count_records('tech_support_requests');
+        $where_conditions[] = "(c.firstname LIKE ? OR c.surname LIKE ? OR c.agency LIKE ? OR 
+                              tsr.support_type LIKE ? OR tsr.subject LIKE ? OR tsr.issue_description LIKE ?)";
+        $search_param = "%$search_term%";
+        $params = array_merge($params, array($search_param, $search_param, $search_param, $search_param, $search_param, $search_param));
+    }
+    
+    if (!empty($status_filter)) {
+        $where_conditions[] = "tsr.status = ?";
+        $params[] = $status_filter;
+    }
+    
+    if (!empty($where_conditions)) {
+        $where_clause = " WHERE " . implode(" AND ", $where_conditions);
+        $base_query .= $where_clause;
+        $count_query .= $where_clause;
+    }
+    
+    $base_query .= " ORDER BY tsr.date_requested DESC LIMIT ? OFFSET ?";
+    $params[] = $records_per_page;
+    $params[] = $offset;
+    
+    // Prepare and execute the main query
+    $stmt = $conn->prepare($base_query);
+    if ($stmt === false) {
+        throw new Exception($conn->error);
+    }
+    if (!empty($params)) {
+        $stmt->bind_param(str_repeat("s", count($params)), ...$params);
+    }
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $serviceRequests = $result->fetch_all(MYSQLI_ASSOC);
+    
+    // Get total count for pagination
+    $stmt = $conn->prepare($count_query);
+    if ($stmt === false) {
+        throw new Exception($conn->error);
+    }
+    if (!empty($params)) {
+        // Remove the last two parameters (LIMIT and OFFSET) for the count query
+        array_pop($params);
+        array_pop($params);
+        if (!empty($params)) {
+            $stmt->bind_param(str_repeat("s", count($params)), ...$params);
         }
     }
+    $stmt->execute();
+    $count_result = $stmt->get_result();
+    $count_row = $count_result->fetch_assoc();
+    $total_records = $count_row['total'];
+    
 } catch (Exception $e) {
     $error_message = "Error: " . $e->getMessage();
     $serviceRequests = [];
@@ -125,8 +283,18 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
                     <div>
                         <h2 class="card-title h4 mb-1">Service Requests Management</h2>
                         <p class="text-muted small mb-0">View and manage technical support requests from clients.</p>
-                    </div>
-                    <div>
+                    </div>                    <div class="d-flex align-items-center gap-2">
+                        <form method="post" class="d-flex align-items-center gap-2">
+                            <div class="form-group">
+                                <input type="date" name="export_start_date" class="form-control form-control-sm" required>
+                            </div>
+                            <div class="form-group">
+                                <input type="date" name="export_end_date" class="form-control form-control-sm" required>
+                            </div>
+                            <button type="submit" name="export_excel" class="btn btn-primary btn-sm">
+                                <i class="bi bi-file-earmark-excel me-1"></i> Export to Excel
+                            </button>
+                        </form>
                         <a href="../tech-support.php" target="_blank" class="btn btn-success btn-sm">
                             <i class="bi bi-plus-circle me-1"></i> New Request
                         </a>
@@ -186,7 +354,7 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
                             <th scope="col">Client</th>
                             <th scope="col">Gender</th>
                             <th scope="col">Age</th>
-                            <th scope="col">Agency</th>
+                            <th scope="col">Sector</th>
                             <th scope="col">Region</th>
                             <th scope="col">Support Type</th>
                             <th scope="col">Date</th>
@@ -203,32 +371,38 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
                         </tr>
                         <?php else: ?>
                             <?php 
-                            // Fix the count calculation to ensure it's always positive
                             $count = max(1, ((int)$current_page - 1) * (int)$records_per_page + 1);
                             foreach ($serviceRequests as $request): 
-                                // Get region name
-                                $region_name = "";
-                                if (!empty($request['region_id'])) {
-                                    $region = get_record_by_id('regions', $request['region_id']);
-                                    if ($region) {
-                                        $region_name = $region['region_name'];
-                                    }
-                                }
+                                // Construct full name
+                                $fullname = trim($request['firstname'] . ' ' . 
+                                    ($request['middle_initial'] ? $request['middle_initial'] . ' ' : '') . 
+                                    $request['surname']);
                             ?>
                             <tr>
                                 <td><?php echo $count++; ?></td>
                                 <td>
-                                    <div class="fw-medium"><?php echo htmlspecialchars($request['client_name']); ?></div>
+                                    <div class="fw-medium"><?php echo htmlspecialchars($fullname); ?></div>
+                                    <div class="small text-muted"><?php echo htmlspecialchars($request['subject']); ?></div>
                                 </td>
                                 <td><?php echo htmlspecialchars($request['gender']); ?></td>
                                 <td><?php echo !empty($request['age']) ? (int)$request['age'] : ''; ?></td>
+                                <td><?php echo htmlspecialchars($request['agency']); ?></td>
                                 <td>
-                                    <div><?php echo htmlspecialchars($request['agency']); ?></div>
+                                    <?php 
+                                    echo htmlspecialchars($request['region_name'] ?? $request['region']); 
+                                    if (!empty($request['region_code'])) {
+                                        echo ' (' . htmlspecialchars($request['region_code']) . ')';
+                                    }
+                                    ?>
                                 </td>
-                                <td><?php echo htmlspecialchars($region_name); ?></td>
                                 <td><?php echo htmlspecialchars($request['support_type']); ?></td>
                                 <td>
                                     <?php echo date('M d, Y', strtotime($request['date_requested'])); ?>
+                                    <?php if ($request['date_assisted']): ?>
+                                        <div class="small text-muted">
+                                            Assisted: <?php echo date('M d, Y', strtotime($request['date_assisted'])); ?>
+                                        </div>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?php if ($request['status'] === 'Resolved'): ?>
