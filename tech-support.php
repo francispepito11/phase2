@@ -102,15 +102,29 @@ unset($_SESSION['success_message']);
                 <h2 class="text-xl font-semibold mb-4 text-center text-blue-800">We Value Your Feedback!</h2>
                 <form id="satisfactionForm">
                     <input type="hidden" id="supportRequestId" name="support_request_id" value="">
-                    <input type="hidden" id="clientNameFeedback" name="client_name" value="<?php echo isset($_GET['client_name']) ? htmlspecialchars($_GET['client_name']) : ''; ?>">
-                    <div class="mb-4">
-                        <label class="block text-gray-700 mb-2 text-sm">How satisfied are you with our support?</label>
-                        <div class="flex justify-between space-x-2">
-                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-green-100 hover:bg-green-200 text-green-800 font-semibold" data-value="5">Very Satisfied</button>
-                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-blue-100 hover:bg-blue-200 text-blue-800 font-semibold" data-value="4">Satisfied</button>
-                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-yellow-100 hover:bg-yellow-200 text-yellow-800 font-semibold" data-value="3">Neutral</button>
-                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-orange-100 hover:bg-orange-200 text-orange-800 font-semibold" data-value="2">Dissatisfied</button>
-                            <button type="button" class="satisfaction-btn flex-1 py-2 rounded bg-red-100 hover:bg-red-200 text-red-800 font-semibold" data-value="1">Very Dissatisfied</button>
+                    <input type="hidden" id="clientNameFeedback" name="client_name" value="<?php echo isset($_GET['client_name']) ? htmlspecialchars($_GET['client_name']) : ''; ?>">                    <div class="mb-4">
+                        <label class="block text-gray-700 mb-3 text-sm font-medium">How satisfied are you with our support?</label>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-2">
+                            <button type="button" class="satisfaction-btn py-3 px-2 rounded text-center bg-green-100 hover:bg-green-200 text-green-800 text-xs font-semibold transition-colors duration-200" data-value="5">
+                                <div class="text-lg mb-1">😍</div>
+                                <div>Very Satisfied</div>
+                            </button>
+                            <button type="button" class="satisfaction-btn py-3 px-2 rounded text-center bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs font-semibold transition-colors duration-200" data-value="4">
+                                <div class="text-lg mb-1">😊</div>
+                                <div>Satisfied</div>
+                            </button>
+                            <button type="button" class="satisfaction-btn py-3 px-2 rounded text-center bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-semibold transition-colors duration-200" data-value="3">
+                                <div class="text-lg mb-1">😐</div>
+                                <div>Neutral</div>
+                            </button>
+                            <button type="button" class="satisfaction-btn py-3 px-2 rounded text-center bg-orange-100 hover:bg-orange-200 text-orange-800 text-xs font-semibold transition-colors duration-200" data-value="2">
+                                <div class="text-lg mb-1">😞</div>
+                                <div>Dissatisfied</div>
+                            </button>
+                            <button type="button" class="satisfaction-btn py-3 px-2 rounded text-center bg-red-100 hover:bg-red-200 text-red-800 text-xs font-semibold transition-colors duration-200" data-value="1">
+                                <div class="text-lg mb-1">😠</div>
+                                <div>Very Dissatisfied</div>
+                            </button>
                         </div>
                     </div>
                     <div class="mb-4">

@@ -262,11 +262,89 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
             overflow-x: auto;
             max-width: 100%;
         }
-        
-        /* Make table cells more compact */
+          /* Make table cells more compact */
         .compact-table th, .compact-table td {
             padding: 0.5rem 0.75rem;
             font-size: 0.8125rem;
+        }
+          /* Action buttons styling */
+        .btn-group .btn,
+        .d-flex .btn {
+            border-radius: 0.375rem;
+            transition: all 0.2s ease-in-out;
+            font-size: 0.75rem;
+        }
+        
+        .d-flex .btn:hover,
+        .btn-group .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .btn-outline-info:hover {
+            background-color: #0dcaf0;
+            border-color: #0dcaf0;
+            color: white;
+        }
+        
+        .btn-outline-warning:hover {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+          .btn-outline-secondary:hover {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            color: white;
+        }
+        
+        /* Actions column width */
+        .table th:last-child,
+        .table td:last-child {
+            min-width: 120px;
+            width: 120px;
+        }
+        
+        /* Responsive design for action buttons */
+        @media (max-width: 768px) {
+            .d-flex.gap-1 {
+                flex-direction: column;
+                gap: 0.25rem !important;
+            }
+            
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-group .btn {
+                margin-bottom: 2px;
+                margin-right: 0;
+                width: 100%;
+            }
+              .table th:last-child,
+            .table td:last-child {
+                min-width: 100px;
+                width: 100px;
+            }
+        }
+        
+        /* Icon-only view for very small screens */
+        @media (max-width: 576px) {
+            .d-flex.gap-1 {
+                flex-direction: row;
+                justify-content: center;
+            }
+            
+            .btn-sm {
+                padding: 0.25rem 0.4rem;
+            }
+            
+            .table th:last-child,
+            .table td:last-child {
+                min-width: 100px;
+                width: 100px;
+            }
         }
     </style>
 </head>
@@ -414,10 +492,25 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
                                     <?php else: ?>
                                         <span class="badge bg-warning text-dark">Pending</span>
                                     <?php endif; ?>
-                                </td>
-                                <td>
-                                    <a href="view-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-primary me-1">View</a>
-                                    <a href="edit-request.php?id=<?php echo $request['id']; ?>" class="btn btn-sm btn-outline-secondary">Edit</a>
+                                </td>                                <td>
+                                    <div class="d-flex gap-1 justify-content-start">
+                                        <a href="view-request.php?id=<?php echo $request['id']; ?>" 
+                                           class="btn btn-sm btn-outline-info flex-fill" 
+                                           title="View request details"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top">
+                                            <i class="bi bi-eye"></i>
+                                            <span class="d-none d-md-inline ms-1">View</span>
+                                        </a>
+                                        <a href="edit-request.php?id=<?php echo $request['id']; ?>" 
+                                           class="btn btn-sm btn-outline-warning flex-fill" 
+                                           title="Edit request"
+                                           data-bs-toggle="tooltip" 
+                                           data-bs-placement="top">
+                                            <i class="bi bi-pencil-square"></i>
+                                            <span class="d-none d-md-inline ms-1">Edit</span>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -476,9 +569,14 @@ $total_pages = ceil((int)$total_records / (int)$records_per_page);
     <!-- Bootstrap Bundle with Popper -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- Custom JavaScript for Sidebar Dropdown -->
-    <script>
+    <!-- Custom JavaScript for Sidebar Dropdown -->    <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
     // Initialize Bootstrap JS
     if (typeof bootstrap !== 'undefined') {
         // Initialize all dropdowns

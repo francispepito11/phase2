@@ -74,10 +74,10 @@ debug_to_console("Date range: $start_date to $end_date");
 
 // Get provinces for dropdown
 $provinces = [];
-try {
-    $sql = "SELECT DISTINCT p.id, p.province_name as name 
+try {    $sql = "SELECT DISTINCT p.id, p.province_name as name 
             FROM provinces p
-            LEFT JOIN tech_support_requests tsr ON tsr.province_id = p.id
+            LEFT JOIN clients c ON c.province_id = p.id
+            LEFT JOIN tech_support_requests tsr ON tsr.client_id = c.id
             ORDER BY p.province_name";
     $result = $conn->query($sql);
     
@@ -166,12 +166,12 @@ if (!in_array('Others', $service_categories)) {
 
 // Get support type summary for the selected period
 $support_summary = [];
-try {
-    $province_condition = ($selected_province !== 'all') ? "AND province_id = '$selected_province'" : "";
+try {    $province_condition = ($selected_province !== 'all') ? "AND c.province_id = '$selected_province'" : "";
     
     $sql = "SELECT support_type, COUNT(*) as count 
-            FROM tech_support_requests 
-            WHERE date_requested BETWEEN '$start_date' AND '$end_date' 
+            FROM tech_support_requests tsr
+            JOIN clients c ON tsr.client_id = c.id
+            WHERE tsr.date_requested BETWEEN '$start_date' AND '$end_date' 
             $province_condition
             GROUP BY support_type 
             ORDER BY count DESC";
@@ -213,9 +213,9 @@ try {
     }
     
     $support_summary = $normalized_summary;
-    
-    $sql = "SELECT COUNT(*) as total FROM tech_support_requests 
-            WHERE date_requested BETWEEN '$start_date' AND '$end_date' $province_condition";
+      $sql = "SELECT COUNT(*) as total FROM tech_support_requests tsr
+            JOIN clients c ON tsr.client_id = c.id
+            WHERE tsr.date_requested BETWEEN '$start_date' AND '$end_date' $province_condition";
     
     $result = $conn->query($sql);
     
@@ -267,16 +267,16 @@ try {
             $temp_services[$service_lower] = $service_data;
         }
     }
-    
-    // Get data from database
-    $province_condition = ($selected_province !== 'all') ? "AND province_id = '$selected_province'" : "";
+      // Get data from database
+    $province_condition = ($selected_province !== 'all') ? "AND c.province_id = '$selected_province'" : "";
     
     if ($view_type === 'monthly') {
-        $sql = "SELECT support_type, COUNT(*) as count 
-                FROM tech_support_requests 
-                WHERE date_requested BETWEEN '$start_date' AND '$end_date' 
+        $sql = "SELECT tsr.support_type, COUNT(*) as count 
+                FROM tech_support_requests tsr
+                JOIN clients c ON tsr.client_id = c.id
+                WHERE tsr.date_requested BETWEEN '$start_date' AND '$end_date' 
                 $province_condition
-                GROUP BY support_type";
+                GROUP BY tsr.support_type";
         
         $result = $conn->query($sql);
         
@@ -314,12 +314,12 @@ try {
                 $temp_services[$support_type_lower] = $service_data;
             }
         }
-    } else {
-        $sql = "SELECT support_type, MONTH(date_requested) as month, COUNT(*) as count 
-                FROM tech_support_requests 
-                WHERE date_requested BETWEEN '$start_date' AND '$end_date' 
+    } else {        $sql = "SELECT tsr.support_type, MONTH(tsr.date_requested) as month, COUNT(*) as count 
+                FROM tech_support_requests tsr
+                JOIN clients c ON tsr.client_id = c.id
+                WHERE tsr.date_requested BETWEEN '$start_date' AND '$end_date' 
                 $province_condition
-                GROUP BY support_type, MONTH(date_requested)";
+                GROUP BY tsr.support_type, MONTH(tsr.date_requested)";
         
         $result = $conn->query($sql);
         
@@ -393,10 +393,10 @@ try {
             $services_by_province[$province_id]['services'][$category] = 0;
         }
     }
-    
-    $sql = "SELECT p.id, p.province_name as name, tsr.support_type, COUNT(*) as count
+      $sql = "SELECT p.id, p.province_name as name, tsr.support_type, COUNT(*) as count
             FROM tech_support_requests tsr
-            JOIN provinces p ON tsr.province_id = p.id
+            JOIN clients c ON tsr.client_id = c.id
+            JOIN provinces p ON c.province_id = p.id
             WHERE tsr.date_requested BETWEEN '$start_date' AND '$end_date'
             GROUP BY p.id, p.province_name, tsr.support_type";
     

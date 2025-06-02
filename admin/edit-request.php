@@ -18,11 +18,22 @@ if (!isset($_GET['id']) || empty($_GET['id'])) {
 
 $id = (int)$_GET['id'];
 
-// Get request and client details
+// Get request and client details with proper joins for location
 $stmt = $conn->prepare("
-    SELECT tsr.*, c.firstname, c.surname, c.middle_initial, c.email, c.phone, c.agency, c.region, c.province_id, c.district_id, c.municipality_id
+    SELECT tsr.*, 
+           c.firstname, c.surname, c.middle_initial, c.email, c.phone, c.agency, c.gender, c.birthdate,
+           c.region, c.region_id, c.province_id, c.district_id, c.municipality_id,
+           r.region_name, r.region_code,
+           p.province_name, p.province_code,
+           d.district_name, d.district_code,
+           m.municipality_name, m.municipality_code,
+           TIMESTAMPDIFF(YEAR, c.birthdate, CURDATE()) as age
     FROM tech_support_requests tsr
     JOIN clients c ON tsr.client_id = c.id
+    LEFT JOIN regions r ON c.region_id = r.id
+    LEFT JOIN provinces p ON c.province_id = p.id
+    LEFT JOIN districts d ON c.district_id = d.id
+    LEFT JOIN municipalities m ON c.municipality_id = m.id
     WHERE tsr.id = ?
 ");
 $stmt->bind_param("i", $id);
@@ -44,11 +55,13 @@ while ($row = $stmt->fetch_assoc()) {
 }
 
 // Process form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {    $status = $_POST['status'];
-    $remarks = $_POST['remarks'];
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $status = trim($_POST['status']);
+    $remarks = trim($_POST['remarks']);
     $date_assisted = null;
     $date_resolved = null;
     
+    // Automatically set timestamps based on status changes
     if ($status == 'In Progress' && empty($request['date_assisted'])) {
         $date_assisted = date('Y-m-d H:i:s');
     } elseif ($status == 'Resolved') {
@@ -58,7 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    $status = $_POST['status'];
         if (empty($request['date_assisted'])) {
             $date_assisted = date('Y-m-d H:i:s');
         }
-    }    // Update the request
+    }
+    
+    // Update the request
     $stmt = $conn->prepare("
         UPDATE tech_support_requests 
         SET status = ?,
@@ -70,27 +85,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {    $status = $_POST['status'];
         WHERE id = ?
     ");
     
-    $assisted_by_id = $_SESSION['username'] ?? null;
+    $assisted_by_id = $_SESSION['user_id'] ?? $_SESSION['username'] ?? null;
     $stmt->bind_param("sssssi", $status, $remarks, $date_assisted, $date_resolved, $assisted_by_id, $id);
     
     if ($stmt->execute()) {
+        $_SESSION['success_message'] = 'Support request updated successfully.';
         header('Location: service-requests.php?updated=1');
         exit();
+    } else {
+        $_SESSION['error_message'] = 'Failed to update support request. Please try again.';
     }
 }
 
-// Get location details
-$stmt = $conn->prepare("
-    SELECT r.region_name, p.province_name, d.district_name, m.municipality_name
-    FROM regions r 
-    LEFT JOIN provinces p ON p.id = ?
-    LEFT JOIN districts d ON d.id = ?
-    LEFT JOIN municipalities m ON m.id = ?
-    WHERE r.region_code = ?
-");
-$stmt->bind_param("iiis", $request['province_id'], $request['district_id'], $request['municipality_id'], $request['region']);
-$stmt->execute();
-$location = $stmt->get_result()->fetch_assoc();
+// Get location details - no need for additional query as we already have the data
+$location = [
+    'region_name' => $request['region_name'] ?? '',
+    'province_name' => $request['province_name'] ?? '',
+    'district_name' => $request['district_name'] ?? '',
+    'municipality_name' => $request['municipality_name'] ?? ''
+];
+
+// Format full client name
+$fullname = trim($request['firstname'] . ' ' . 
+    ($request['middle_initial'] ? $request['middle_initial'] . ' ' : '') . 
+    $request['surname']);
+
+// Get success/error messages
+$success_message = $_SESSION['success_message'] ?? '';
+$error_message = $_SESSION['error_message'] ?? '';
+unset($_SESSION['success_message'], $_SESSION['error_message']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -98,203 +121,253 @@ $location = $stmt->get_result()->fetch_assoc();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Support Request - DICT Client Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
         }
-        .main-content {
-            height: 100vh;
-            overflow-y: auto;
-            max-width: 100%;
+        
+        .form-control, .form-select {
+            border-radius: 6px;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .btn-primary {
+            background-color: #2563eb;
+            border-color: #2563eb;
+        }
+          .btn-primary:hover {
+            background-color: #1d4ed8;
+            border-color: #1d4ed8;
+        }
+        
+        .badge {
+            font-size: 0.875rem;
+        }
+        
+        .form-control:read-only {
+            background-color: #f8f9fa;
+            border-color: #e9ecef;
+        }
+        
+        .text-muted {
+            font-size: 0.825rem;
         }
     </style>
 </head>
-<?php include '../admin/includes/sidebar.php'; ?>
-<body class="bg-gray-100">
-    <!-- Main content -->
-    <div class="flex-1 main-content">
-        <!-- Top bar -->
-        <div class="bg-white shadow-sm">
-            <div class="px-4 py-2 flex justify-between items-center">
-                <h1 class="text-xl font-semibold">Edit Service Request</h1>
+<body>
+    <?php include '../admin/includes/sidebar.php'; ?>
+    
+    <!-- Main Content -->    <div class="container-fluid p-4">
+        <!-- Success/Error Messages -->
+        <?php if (!empty($success_message)): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle me-2"></i>
+            <?php echo htmlspecialchars($success_message); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php endif; ?>
+        
+        <?php if (!empty($error_message)): ?>
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <?php echo htmlspecialchars($error_message); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Edit Service Request #<?php echo $id; ?></h1>
+            <div class="text-muted">
+                <small>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> | Admin</small>
+            </div>        </div>
+
+        <!-- Edit Form Card -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <div>
-                    <p class="text-sm text-gray-500">
-                        Welcome, <?php echo $_SESSION['username']; ?> | Admin
-                    </p>
+                    <h5 class="card-title mb-1">Request Details</h5>
+                    <small class="text-muted">
+                        Submitted: <?php echo date('F j, Y, g:i a', strtotime($request['date_requested'])); ?>
+                        <?php if (!empty($request['date_assisted'])): ?>
+                            | Assisted: <?php echo date('F j, Y, g:i a', strtotime($request['date_assisted'])); ?>
+                        <?php endif; ?>
+                        <?php if (!empty($request['date_resolved'])): ?>
+                            | Resolved: <?php echo date('F j, Y, g:i a', strtotime($request['date_resolved'])); ?>
+                        <?php endif; ?>
+                    </small>
+                </div>
+                <div>
+                    <?php
+                    $status_class = 'bg-warning text-dark';
+                    if ($request['status'] === 'In Progress') {
+                        $status_class = 'bg-primary';
+                    } elseif ($request['status'] === 'Resolved') {
+                        $status_class = 'bg-success';
+                    } elseif ($request['status'] === 'Cancelled') {
+                        $status_class = 'bg-danger';
+                    }
+                    ?>
+                    <span class="badge <?php echo $status_class; ?> px-3 py-2">
+                        <?php echo htmlspecialchars($request['status']); ?>
+                    </span>
                 </div>
             </div>
-        </div>
-
-        <!-- Page content -->
-        <div class="p-6">
-            <!-- Back button -->
-            <div class="mb-6">
-                <a href="service-requests.php" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                    </svg>
-                    Back to Service Requests
-                </a>
-            </div>
-
-            <!-- Edit Form -->
-            <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+            <div class="card-body">
                 <form method="post" action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"] . "?id=" . $id); ?>">
-                    <div class="px-4 py-5 sm:p-6">
-                        <div class="grid grid-cols-6 gap-6">
-                            <!-- Client Information -->
-                            <div class="col-span-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Client Information</h3>
-                            </div>                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Client Name</label>
-                                <input type="text" value="<?php echo htmlspecialchars($request['firstname'] . ' ' . $request['middle_initial'] . ' ' . $request['surname']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                    <div class="row g-3">
+                        <!-- Client Information Section -->
+                        <div class="col-12">
+                            <h6 class="fw-bold text-primary mb-3">Client Information</h6>
+                        </div>
+                          <div class="col-md-6">
+                            <label class="form-label">Client Name</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($fullname); ?>" readonly>
+                            <small class="text-muted">
+                                <?php echo htmlspecialchars($request['gender']); ?> | Age: <?php echo $request['age']; ?> | 
+                                Born: <?php echo date('F j, Y', strtotime($request['birthdate'])); ?>
+                            </small>
+                        </div>                        <div class="col-md-6">
+                            <label class="form-label">Agency</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($request['agency']); ?>" readonly>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Agency</label>
-                                <input type="text" value="<?php echo htmlspecialchars($request['agency']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                        <!-- Location Information Section -->
+                        <div class="col-12 mt-4">
+                            <h6 class="fw-bold text-primary mb-3">Location Information</h6>
+                        </div>                        <div class="col-md-6">
+                            <label class="form-label">Region</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($location['region_name'] ?: $request['region']); ?>" readonly>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Contact Details</label>
-                                <input type="text" value="<?php echo htmlspecialchars($request['email'] . ' / ' . $request['phone']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Province</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($location['province_name'] ?: 'Not specified'); ?>" readonly>
+                        </div>
 
-                            <!-- Location Information -->
-                            <div class="col-span-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Location Information</h3>
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label">District</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($location['district_name'] ?: 'Not specified'); ?>" readonly>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Region</label>
-                                <input type="text" value="<?php echo htmlspecialchars($location['region_name'] ?? $request['region']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Municipality/City</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($location['municipality_name'] ?: 'Not specified'); ?>" readonly>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Province</label>
-                                <input type="text" value="<?php echo htmlspecialchars($location['province_name'] ?? ''); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                        <!-- Support Request Details Section -->
+                        <div class="col-12 mt-4">
+                            <h6 class="fw-bold text-primary mb-3">Support Request Details</h6>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">District</label>
-                                <input type="text" value="<?php echo htmlspecialchars($location['district_name'] ?? ''); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                        <div class="col-12">
+                            <label class="form-label">Support Type</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($request['support_type']); ?>" readonly>
+                        </div>
 
-                            <div class="col-span-6 sm:col-span-3">
-                                <label class="block text-sm font-medium text-gray-700">Municipality</label>
-                                <input type="text" value="<?php echo htmlspecialchars($location['municipality_name'] ?? ''); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
+                        <div class="col-12">
+                            <label class="form-label">Subject</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($request['subject']); ?>" readonly>
+                        </div>                        <div class="col-12">
+                            <label class="form-label">Issue Description/Message</label>
+                            <textarea class="form-control" rows="4" readonly><?php echo htmlspecialchars($request['message'] ?: $request['issue_description'] ?: 'No description provided'); ?></textarea>
+                        </div>
 
-                            <!-- Support Request Details -->
-                            <div class="col-span-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Support Request Details</h3>
-                            </div>
-
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Support Type</label>
-                                <input type="text" value="<?php echo htmlspecialchars($request['support_type']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
-
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Subject</label>
-                                <input type="text" value="<?php echo htmlspecialchars($request['subject']); ?>" readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm">
-                            </div>
-
-                            <div class="col-span-6">
-                                <label class="block text-sm font-medium text-gray-700">Issue Description</label>
-                                <textarea readonly class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 bg-gray-50 sm:text-sm"><?php echo htmlspecialchars($request['message'] ?? $request['issue_description']); ?></textarea>
-                            </div>
-
-                            <!-- Status Information -->
-                            <div class="col-span-6">
-                                <h3 class="text-lg font-medium text-gray-900 mb-4">Status Information</h3>
-                            </div>
-
-                            <div class="col-span-6 sm:col-span-3">
-                                <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                                <select name="status" id="status" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm">
-                                    <option value="Pending" <?php echo $request['status'] === 'Pending' ? 'selected' : ''; ?>>Pending</option>
-                                    <option value="In Progress" <?php echo $request['status'] === 'In Progress' ? 'selected' : ''; ?>>In Progress</option>
-                                    <option value="Resolved" <?php echo $request['status'] === 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
-                                    <option value="Cancelled" <?php echo $request['status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
-                                </select>
-                            </div>
-
-                            <div class="col-span-6">
-                                <label for="remarks" class="block text-sm font-medium text-gray-700">Remarks</label>
-                                <textarea name="remarks" id="remarks" rows="4" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"><?php echo htmlspecialchars($request['remarks'] ?? ''); ?></textarea>
-                            </div>
+                        <!-- Status Information Section -->
+                        <div class="col-12 mt-4">
+                            <h6 class="fw-bold text-primary mb-3">Status Information</h6>
+                        </div>                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status <span class="text-danger">*</span></label>
+                            <select name="status" id="status" class="form-select" required>
+                                <option value="Pending" <?php echo $request['status'] === 'Pending' ? 'selected' : ''; ?>>Pending</option>
+                                <option value="In Progress" <?php echo $request['status'] === 'In Progress' ? 'selected' : ''; ?>>In Progress</option>
+                                <option value="Resolved" <?php echo $request['status'] === 'Resolved' ? 'selected' : ''; ?>>Resolved</option>
+                                <option value="Cancelled" <?php echo $request['status'] === 'Cancelled' ? 'selected' : ''; ?>>Cancelled</option>
+                            </select>
+                            <small class="text-muted">Select the current status of this request</small>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Assisted By</label>
+                            <input type="text" class="form-control" value="<?php echo htmlspecialchars($request['assisted_by_id'] ?: 'Not assigned'); ?>" readonly>
+                            <small class="text-muted">Will be updated when status changes</small>
+                        </div>                        <div class="col-12">
+                            <label for="remarks" class="form-label">Remarks/Notes</label>
+                            <textarea name="remarks" id="remarks" class="form-control" rows="4" placeholder="Add any remarks, notes, or resolution details..."><?php echo htmlspecialchars($request['remarks'] ?: ''); ?></textarea>
+                            <small class="text-muted">Include any important notes, actions taken, or resolution details</small>
                         </div>
                     </div>
-                    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6">
-                        <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                            Save Changes
+                    
+                    <div class="mt-4 d-flex justify-content-between">
+                        <a href="service-requests.php" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>
+                            Cancel & Return
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Update Request
                         </button>
                     </div>
                 </form>
-            </div>
-        </div>
+            </div>        </div>
     </div>
 
-    <!-- Add JavaScript for dynamic dropdowns -->
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const regionSelect = document.getElementById('region_id');
-            const provinceSelect = document.getElementById('province_id');
-            const districtSelect = document.getElementById('district_id');
-            const municipalitySelect = document.getElementById('municipality_id');
-
-            // Function to update provinces when region changes
-            regionSelect.addEventListener('change', function() {
-                const regionId = this.value;
-                fetch(`../includes/location_data.php?action=get_provinces&region_id=${regionId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        provinceSelect.innerHTML = '<option value="">Select Province</option>';
-                        data.forEach(province => {
-                            provinceSelect.innerHTML += `<option value="${province.id}">${province.province_name}</option>`;
-                        });
-                    });
-            });
-
-            // Function to update districts when province changes
-            provinceSelect.addEventListener('change', function() {
-                const provinceId = this.value;
-                fetch(`../includes/location_data.php?action=get_districts&province_id=${provinceId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        districtSelect.innerHTML = '<option value="">Select District</option>';
-                        data.forEach(district => {
-                            districtSelect.innerHTML += `<option value="${district.id}">${district.district_name}</option>`;
-                        });
-                    });
-            });
-
-            // Function to update municipalities when district changes
-            districtSelect.addEventListener('change', function() {
-                const districtId = this.value;
-                fetch(`../includes/location_data.php?action=get_municipalities&district_id=${districtId}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        municipalitySelect.innerHTML = '<option value="">Select Municipality</option>';
-                        data.forEach(municipality => {
-                            municipalitySelect.innerHTML += `<option value="${municipality.id}">${municipality.municipality_name}</option>`;
-                        });
-                    });
-            });
-
-            // Show remarks field when status is changed to Resolved
             const statusSelect = document.getElementById('status');
             const remarksContainer = document.getElementById('remarks').parentElement;
             
-            function toggleRemarksVisibility() {
-                remarksContainer.style.display = statusSelect.value === 'Resolved' ? 'block' : 'none';
+            // Show appropriate help text based on status
+            function updateStatusHelp() {
+                const statusValue = statusSelect.value;
+                const helpText = statusSelect.parentElement.querySelector('.text-muted');
+                
+                switch(statusValue) {
+                    case 'Pending':
+                        helpText.textContent = 'Request is waiting to be processed';
+                        break;
+                    case 'In Progress':
+                        helpText.textContent = 'Request is currently being worked on';
+                        break;
+                    case 'Resolved':
+                        helpText.textContent = 'Request has been completed successfully';
+                        break;
+                    case 'Cancelled':
+                        helpText.textContent = 'Request has been cancelled';
+                        break;
+                }
             }
             
-            statusSelect.addEventListener('change', toggleRemarksVisibility);
-            toggleRemarksVisibility(); // Initial state
+            statusSelect.addEventListener('change', updateStatusHelp);
+            updateStatusHelp(); // Initial state
+            
+            // Auto-dismiss alerts after 5 seconds
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                setTimeout(function() {
+                    if (alert && !alert.classList.contains('d-none')) {
+                        const bsAlert = new bootstrap.Alert(alert);
+                        bsAlert.close();
+                    }
+                }, 5000);
+            });
         });
     </script>
 </body>

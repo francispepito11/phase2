@@ -116,202 +116,247 @@ $success_message = isset($_GET['updated']) && $_GET['updated'] == 1 ? 'Support r
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Support Request - DICT Client Management System</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Custom Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
     <style>        
         body {
             font-family: 'Inter', sans-serif;
+            background-color: #f8f9fa;
         }
-        .main-content {
-            height: 100vh;
-            overflow-y: auto;
-            max-width: 100%;
+        
+        .status-badge {
+            border-radius: 20px;
+            padding: 0.375rem 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .status-pending {
+            background-color: #fef3c7;
+            color: #92400e;
+        }
+        
+        .status-progress {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        
+        .status-resolved {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-cancelled {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .timeline-item {
+            border-left: 2px solid #e5e7eb;
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .timeline-item:last-child {
+            margin-bottom: 0;
+        }
+        
+        .timeline-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background-color: #6b7280;
+            margin-left: -7px;
+            margin-top: 0.25rem;
+        }
+        
+        .timeline-dot.active {
+            background-color: #3b82f6;
         }
     </style>
 </head>
-<?php include '../admin/includes/sidebar.php'; ?>
-<body class="bg-gray-100">
+<body>
+    <?php include '../admin/includes/sidebar.php'; ?>
     
-        <!-- Main content -->
-        <div class="flex-1 main-content">
-            <!-- Top bar -->
-            <div class="bg-white shadow-sm">
-                <div class="px-4 py-2 flex justify-between items-center">
-                    <h1 class="text-xl font-semibold">Service Request Details</h1>
-                    <div>
-                        <p class="text-sm text-gray-500">
-                            <?php echo $_SESSION['username']; ?> | Admin
-                        </p>
-                    </div>
+    <!-- Main Content -->
+    <div class="container-fluid p-4">        <!-- Page Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0 text-gray-800">Service Request Details</h1>
+            <div class="text-muted">
+                <small><?php echo $_SESSION['username']; ?> | Admin</small>
+            </div>
+        </div>
+
+        <!-- Success Message -->
+        <?php if (!empty($success_message)): ?>
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <?php echo $success_message; ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <?php endif; ?>
+
+        <!-- Back Button -->
+        <div class="mb-4">
+            <a href="service-requests.php" class="btn btn-primary">
+                <i class="bi bi-arrow-left me-2"></i>
+                Back to Service Requests
+            </a>
+        </div>
+
+        <!-- Request Details Card -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="card-title mb-1">Support Request #<?php echo $id; ?></h5>
+                    <small class="text-muted">
+                        Submitted: <?php echo date('F j, Y, g:i a', strtotime($request['date_requested'])); ?>
+                    </small>
+                </div>
+                <div>
+                    <?php
+                    $status_class = 'status-pending';
+                    if ($request['status'] === 'In Progress') {
+                        $status_class = 'status-progress';
+                    } elseif ($request['status'] === 'Resolved') {
+                        $status_class = 'status-resolved';
+                    } elseif ($request['status'] === 'Cancelled') {
+                        $status_class = 'status-cancelled';
+                    }
+                    ?>
+                    <span class="status-badge <?php echo $status_class; ?>">
+                        <?php echo $request['status']; ?>
+                    </span>
                 </div>
             </div>
-
-            <!-- Page content -->
-            <div class="p-6">
-                <!-- Success Message -->
-                <?php if (!empty($success_message)): ?>
-                <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
-                    <span class="block sm:inline"><?php echo $success_message; ?></span>
-                </div>
-                <?php endif; ?>
-
-                <!-- Back button -->
-                <div class="mb-6">
-                    <a href="service-requests.php" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M9.707 16.707a1 1 0 01-1.414 0l-6-6a1 1 0 010-1.414l6-6a1 1 0 011.414 1.414L5.414 9H17a1 1 0 110 2H5.414l4.293 4.293a1 1 0 010 1.414z" clip-rule="evenodd" />
-                        </svg>
-                        Back to Service Requests
-                    </a>
-                </div>
-
-                <div class="bg-white shadow overflow-hidden sm:rounded-lg">
-                    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-                        <div>
-                            <h3 class="text-lg leading-6 font-medium text-gray-900">Support Request #<?php echo $id; ?></h3>
-                            <p class="mt-1 max-w-2xl text-sm text-gray-500">
-                                Submitted: <?php echo date('F j, Y, g:i a', strtotime($request['date_requested'])); ?>
-                            </p>
+            <div class="card-body">
+                <div class="row g-3">
+                    <!-- Client Information -->
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">Client Information</h6>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Client Name</label>
+                        <div class="form-control-plaintext">
+                            <?php echo htmlspecialchars($fullname); ?>
+                            <small class="text-muted d-block">
+                                <?php echo htmlspecialchars($request['gender']); ?> | Age: <?php echo $request['age']; ?>
+                            </small>
                         </div>
-                        <div>
-                            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium <?php echo $status_class; ?>">
-                                <?php echo $request['status']; ?>
-                            </span>
+                    </div>                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Agency/Organization</label>
+                        <div class="form-control-plaintext"><?php echo htmlspecialchars($request['agency']); ?></div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-medium">Location</label>
+                        <div class="form-control-plaintext">
+                            <?php echo !empty($location_parts) ? implode(', ', $location_parts) : 'Not specified'; ?>
                         </div>
                     </div>
-                    <div class="border-t border-gray-200">
-                        <dl>
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Client Name</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <?php echo htmlspecialchars($fullname); ?>
-                                    <div class="text-sm text-gray-500">
-                                        <?php echo htmlspecialchars($request['gender']); ?> | 
-                                        Age: <?php echo $request['age']; ?>
-                                    </div>
-                                </dd>
+
+                    <!-- Support Request Details -->
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-primary mb-3">Support Request Details</h6>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Support Type</label>
+                        <div class="form-control-plaintext">
+                            <div class="fw-medium"><?php echo htmlspecialchars($request['support_type']); ?></div>
+                            <small class="text-muted"><?php echo htmlspecialchars($request['subject']); ?></small>
+                        </div>
+                    </div>
+
+                    <?php if (!empty($request['message'])): ?>
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Message</label>
+                        <div class="form-control-plaintext">
+                            <?php echo nl2br(htmlspecialchars($request['message'])); ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($request['issue_description'])): ?>
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Issue Description</label>
+                        <div class="form-control-plaintext">
+                            <?php echo nl2br(htmlspecialchars($request['issue_description'])); ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <?php if (!empty($request['attachment'])): ?>
+                    <div class="col-12">
+                        <label class="form-label fw-medium">Attachment</label>
+                        <div class="form-control-plaintext">
+                            <a href="<?php echo '../' . $request['attachment']; ?>" target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-paperclip me-1"></i>
+                                View Attachment
+                            </a>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+
+                    <!-- Status Timeline -->
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-primary mb-3">Status Timeline</h6>
+                        <div class="timeline">
+                            <div class="timeline-item d-flex">
+                                <div class="timeline-dot active flex-shrink-0"></div>
+                                <div class="ms-3">
+                                    <div class="fw-medium">Request Submitted</div>
+                                    <small class="text-muted">
+                                        <?php echo date('F j, Y, g:i a', strtotime($request['date_requested'])); ?>
+                                    </small>
+                                </div>
                             </div>
-                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Contact Info</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <div>Email: <?php echo htmlspecialchars($request['email']); ?></div>
-                                    <div>Phone: <?php echo htmlspecialchars($request['phone']); ?></div>
-                                </dd>
-                            </div>
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Agency/Organization</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2"><?php echo htmlspecialchars($request['agency']); ?></dd>
-                            </div>
-                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Location</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <?php echo !empty($location_parts) ? implode(', ', $location_parts) : 'Not specified'; ?>
-                                </dd>
-                            </div>
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Support Request</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <div class="font-medium"><?php echo htmlspecialchars($request['support_type']); ?></div>
-                                    <div class="text-gray-500"><?php echo htmlspecialchars($request['subject']); ?></div>
-                                </dd>
-                            </div>
-                            <?php if (!empty($request['message'])): ?>
-                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Message</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <?php echo nl2br(htmlspecialchars($request['message'])); ?>
-                                </dd>
-                            </div>
-                            <?php endif; ?>
-                            <?php if (!empty($request['issue_description'])): ?>
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Issue Description</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <?php echo nl2br(htmlspecialchars($request['issue_description'])); ?>
-                                </dd>
-                            </div>
-                            <?php endif; ?>
-                            <?php if (!empty($request['attachment'])): ?>
-                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Attachment</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <a href="<?php echo '../' . $request['attachment']; ?>" target="_blank" class="text-blue-600 hover:text-blue-800 underline">
-                                        View Attachment
-                                    </a>
-                                </dd>
+                            
+                            <?php if (!empty($request['date_assisted'])): ?>
+                            <div class="timeline-item d-flex">
+                                <div class="timeline-dot active flex-shrink-0"></div>
+                                <div class="ms-3">
+                                    <div class="fw-medium">Request Assistance Started</div>
+                                    <small class="text-muted">
+                                        <?php echo date('F j, Y, g:i a', strtotime($request['date_assisted'])); ?>
+                                    </small>
+                                </div>
                             </div>
                             <?php endif; ?>
                             
-                            <!-- Status Tracking -->
-                            <div class="bg-gray-50 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Status Timeline</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <ul class="border border-gray-200 rounded-md divide-y divide-gray-200">
-                                        <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                                            <div class="w-0 flex-1 flex items-center">
-                                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                                </svg>
-                                                <span class="ml-2 flex-1 w-0 truncate">
-                                                    Request Submitted
-                                                </span>
-                                            </div>
-                                            <div class="ml-4 flex-shrink-0">
-                                                <span class="font-medium text-blue-600 hover:text-blue-500">
-                                                    <?php echo date('F j, Y, g:i a', strtotime($request['date_requested'])); ?>
-                                                </span>
-                                            </div>
-                                        </li>
-                                        <?php if (!empty($request['date_assisted'])): ?>
-                                        <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                                            <div class="w-0 flex-1 flex items-center">
-                                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                                </svg>
-                                                <span class="ml-2 flex-1 w-0 truncate">
-                                                    Request Assistance Started
-                                                </span>
-                                            </div>
-                                            <div class="ml-4 flex-shrink-0">
-                                                <span class="font-medium text-blue-600 hover:text-blue-500">
-                                                    <?php echo date('F j, Y, g:i a', strtotime($request['date_assisted'])); ?>
-                                                </span>
-                                            </div>
-                                        </li>
-                                        <?php endif; ?>
-                                        <?php if (!empty($request['date_resolved'])): ?>
-                                        <li class="pl-3 pr-4 py-3 flex items-center justify-between text-sm">
-                                            <div class="w-0 flex-1 flex items-center">
-                                                <svg class="flex-shrink-0 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd" />
-                                                </svg>
-                                                <span class="ml-2 flex-1 w-0 truncate">
-                                                    Request Resolved
-                                                </span>
-                                            </div>
-                                            <div class="ml-4 flex-shrink-0">
-                                                <span class="font-medium text-blue-600 hover:text-blue-500">
-                                                    <?php echo date('F j, Y, g:i a', strtotime($request['date_resolved'])); ?>
-                                                </span>
-                                            </div>
-                                        </li>
-                                        <?php endif; ?>
-                                    </ul>
-                                </dd>
-                            </div>
-                              <?php if (!empty($request['remarks'])): ?>
-                            <div class="bg-white px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6">
-                                <dt class="text-sm font-medium text-gray-500">Remarks</dt>
-                                <dd class="mt-1 text-sm text-gray-900 sm:mt-0 sm:col-span-2">
-                                    <?php echo nl2br(htmlspecialchars($request['remarks'])); ?>
-                                </dd>
+                            <?php if (!empty($request['date_resolved'])): ?>
+                            <div class="timeline-item d-flex">
+                                <div class="timeline-dot active flex-shrink-0"></div>
+                                <div class="ms-3">
+                                    <div class="fw-medium">Request Resolved</div>
+                                    <small class="text-muted">
+                                        <?php echo date('F j, Y, g:i a', strtotime($request['date_resolved'])); ?>
+                                    </small>
+                                </div>
                             </div>
                             <?php endif; ?>
-                        </dl>
+                        </div>
                     </div>
+
+                    <?php if (!empty($request['remarks'])): ?>
+                    <div class="col-12 mt-4">
+                        <h6 class="fw-bold text-primary mb-3">Remarks</h6>
+                        <div class="form-control-plaintext">
+                            <?php echo nl2br(htmlspecialchars($request['remarks'])); ?>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
-        </div>
-    </div>
+        </div>    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
