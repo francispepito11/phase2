@@ -58,7 +58,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - DICT Client Management System</title>
+    <title>Login - ILCDB Client Services Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -67,11 +67,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     </style>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-    <div class="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-md">
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">    <div class="max-w-md w-full space-y-8 p-10 bg-white rounded-xl shadow-md">
         <div>
+            <div class="text-center mb-4">
+                <img src="../images/dict-logo.png" alt="DICT Logo" class="mx-auto h-16 w-auto">
+            </div>
             <h2 class="mt-6 text-center text-3xl font-extrabold text-gray-900">
-                DICT Client Management System
+               ILCDB Client Services Portal
             </h2>
             <p class="mt-2 text-center text-sm text-gray-600">
                 Admin Login
