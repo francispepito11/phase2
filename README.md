@@ -48,7 +48,7 @@ The system supports various technical services including:
 3. Import the database schema from `dict.sql` file included in the repository
 4. Configure database connection in `includes/db_connect.php` if needed
 5. Start your Apache and MySQL services (if using XAMPP, use the XAMPP Control Panel)
-6. Access the system through a web browser at `http://localhost/phase2-1/`
+6. Access the system through a web browser at `http://localhost/phase2/`
 
 ### Database Configuration
 The system uses a MySQL database with the following default configuration:
